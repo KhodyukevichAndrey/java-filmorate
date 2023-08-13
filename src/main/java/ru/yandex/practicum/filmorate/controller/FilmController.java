@@ -37,7 +37,7 @@ public class FilmController {
         if(checkFilmValidation(film) && films.containsKey(film.getId())) {
             films.put(film.getId(), film);
         } else {
-            log.warn("Фильм с указанным id не найден {}", film.getId());
+            log.warn("Фильм с указанным ID не найден {}", film.getId());
             throw new ValidationException("Фильм с указанным id не найден");
         }
         return film;

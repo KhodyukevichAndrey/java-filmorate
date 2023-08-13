@@ -8,10 +8,11 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-public class FilmControllerTest {
+class FilmControllerTest {
 
     private FilmController filmController;
     private Film film;

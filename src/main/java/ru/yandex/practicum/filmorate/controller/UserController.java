@@ -22,7 +22,7 @@ public class UserController {
     @PostMapping
     public User createUser(@RequestBody User user) {
         log.debug("Получен запрос POST /users");
-        if(checkUserValidation(user)) {
+        if (checkUserValidation(user)) {
             user.setId(generateUserId());
             users.put(user.getId(), user);
         }
@@ -32,7 +32,7 @@ public class UserController {
     @PutMapping
     public User updateUser(@RequestBody User user) {
         log.debug("Получен запрос PUT /users");
-        if(checkUserValidation(user) && users.containsKey(user.getId())) {
+        if (checkUserValidation(user) && users.containsKey(user.getId())) {
             users.put(user.getId(), user);
         } else {
             log.warn("Пользователь с указанным id не найден {}", user.getId());
@@ -52,22 +52,22 @@ public class UserController {
     }
 
     private boolean checkUserValidation(User user) {
-        if(user.getEmail().isBlank() || !user.getEmail().contains("@")) {
+        if (user.getEmail().isBlank() || !user.getEmail().contains("@")) {
             log.warn("Недопустимый email пользователя {}", user.getEmail());
             throw new ValidationException("Значение поля email не может быть пустым и должно содержать символ @");
         }
 
-        if(user.getLogin().isBlank() || user.getLogin().contains(" ")) {
+        if (user.getLogin().isBlank() || user.getLogin().contains(" ")) {
             log.warn("Недопустимый login пользователя {}", user.getLogin());
             throw new ValidationException("Значение поля login не может быть пустым и не должно содержать пробелов");
         }
 
-        if(user.getName() == null) {
+        if (user.getName() == null) {
             log.debug("Имя пользователя не задано -> name = login");
             user.setName(user.getLogin());
         }
 
-        if(user.getBirthday().isAfter(LocalDate.now())) {
+        if (user.getBirthday().isAfter(LocalDate.now())) {
             log.warn("Недопустимая дата роджения пользователя {}", user.getBirthday());
             throw new ValidationException("Дата рождения пользователя должна быть не позднее текущей даты");
         }

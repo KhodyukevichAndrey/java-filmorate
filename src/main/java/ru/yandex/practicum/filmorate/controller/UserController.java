@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.time.LocalDate;
+import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,19 +20,19 @@ public class UserController {
     private int userId = 1;
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
+    public User createUser(@Valid @RequestBody User user) {
         log.debug("Получен запрос POST /users");
-        if (checkUserValidation(user)) {
-            user.setId(generateUserId());
-            users.put(user.getId(), user);
-        }
+        checkUserName(user);
+        user.setId(generateUserId());
+        users.put(user.getId(), user);
         return user;
     }
 
     @PutMapping
-    public User updateUser(@RequestBody User user) {
+    public User updateUser(@Valid @RequestBody User user) {
         log.debug("Получен запрос PUT /users");
-        if (checkUserValidation(user) && users.containsKey(user.getId())) {
+        if (users.containsKey(user.getId())) {
+            checkUserName(user);
             users.put(user.getId(), user);
         } else {
             log.warn("Пользователь с указанным id не найден {}", user.getId());
@@ -51,26 +51,10 @@ public class UserController {
         return userId++;
     }
 
-    private boolean checkUserValidation(User user) {
-        if (user.getEmail().isBlank() || !user.getEmail().contains("@")) {
-            log.warn("Недопустимый email пользователя {}", user.getEmail());
-            throw new ValidationException("Значение поля email не может быть пустым и должно содержать символ @");
-        }
-
-        if (user.getLogin().isBlank() || user.getLogin().contains(" ")) {
-            log.warn("Недопустимый login пользователя {}", user.getLogin());
-            throw new ValidationException("Значение поля login не может быть пустым и не должно содержать пробелов");
-        }
-
+    private void checkUserName (User user) {
         if (user.getName() == null) {
             log.debug("Имя пользователя не задано -> name = login");
             user.setName(user.getLogin());
         }
-
-        if (user.getBirthday().isAfter(LocalDate.now())) {
-            log.warn("Недопустимая дата роджения пользователя {}", user.getBirthday());
-            throw new ValidationException("Дата рождения пользователя должна быть не позднее текущей даты");
-        }
-        return true;
     }
 }

@@ -51,7 +51,7 @@ public class UserController {
         return userId++;
     }
 
-    private void checkUserName (User user) {
+    private void checkUserName(User user) {
         if (user.getName() == null) {
             log.debug("Имя пользователя не задано -> name = login");
             user.setName(user.getLogin());

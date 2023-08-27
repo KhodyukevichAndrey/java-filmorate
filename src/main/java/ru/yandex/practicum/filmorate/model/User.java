@@ -4,6 +4,8 @@ import lombok.Data;
 
 import javax.validation.constraints.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class User {
@@ -18,4 +20,5 @@ public class User {
     @NotNull
     @PastOrPresent
     private final LocalDate birthday;
+    private List<Integer> friends = new ArrayList<>();
 }

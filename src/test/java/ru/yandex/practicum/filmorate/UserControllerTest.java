@@ -4,8 +4,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.UserController;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
 
@@ -22,7 +25,9 @@ class UserControllerTest {
 
     @BeforeEach
     void testEnvironment() {
-        userController = new UserController();
+        UserStorage userStorage = new InMemoryUserStorage();
+        UserService userService = new UserService(userStorage);
+        userController = new UserController(userStorage, userService);
         user = new User("user@yandex.ru", "userLogin", LocalDate.of(1950, 1, 5));
         user.setName("userName");
         userWithoutName = new User("user@yandex.ru",
@@ -38,7 +43,7 @@ class UserControllerTest {
 
     @Test
     void checkUserValidationForGoodExample() {
-        userController.createUser(user);
+        userController.addUser(user);
 
         assertNotNull(user);
         assertEquals(user, userController.getUsers().get(0),
@@ -49,7 +54,7 @@ class UserControllerTest {
 
     @Test
     void checkUserValidationForUserWithoutName() {
-        userController.createUser(userWithoutName);
+        userController.addUser(userWithoutName);
 
         assertNotNull(userWithoutName);
         assertEquals(userWithoutName.getLogin(), userController.getUsers().get(0).getName(),
@@ -59,7 +64,7 @@ class UserControllerTest {
 
     @Test
     void checkForUpdateUser() {
-        userController.createUser(user);
+        userController.addUser(user);
         userController.updateUser(userAfterUpdate);
 
         assertEquals(1, userController.getUsers().size(),
@@ -72,9 +77,9 @@ class UserControllerTest {
 
     @Test
     void checkUserValidationForUpdateWithWrongId() {
-        userController.createUser(user);
+        userController.addUser(user);
 
-        assertThrows(ValidationException.class, () -> userController.updateUser(userWithWrongIdForUpdate),
+        assertThrows(UserNotFoundException.class, () -> userController.updateUser(userWithWrongIdForUpdate),
                 "При попытке обновить данные пользователя с несуществующим id, " +
                         "должно быть выброшено исключение валидации");
         assertEquals(user, userController.getUsers().get(0),

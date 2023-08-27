@@ -4,8 +4,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.FilmController;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
 
@@ -21,7 +26,10 @@ class FilmControllerTest {
 
     @BeforeEach
     void testEnvironment() {
-        filmController = new FilmController();
+        final FilmStorage filmStorage = new InMemoryFilmStorage();
+        final UserStorage userStorage = new InMemoryUserStorage();
+        FilmService filmService = new FilmService(filmStorage, userStorage);
+        filmController = new FilmController(filmStorage, filmService);
         film = new Film("фильм1", "описание1",
                 LocalDate.of(1900, 1, 5), 110);
         filmAfterUpdate = new Film("измененное название", "новое описание",
@@ -60,7 +68,7 @@ class FilmControllerTest {
     void checkFilmValidationForUpdateWithWrongId() {
         filmController.addFilm(film);
 
-        assertThrows(ValidationException.class, () -> filmController.updateFilm(filmWithWrongIdForUpdate),
+        assertThrows(FilmNotFoundException.class, () -> filmController.updateFilm(filmWithWrongIdForUpdate),
                 "При попытке обновить данные фильма с несуществующим id, " +
                         "должно быть выброшено исключение валидации");
         assertEquals(film, filmController.getFilms().get(0),

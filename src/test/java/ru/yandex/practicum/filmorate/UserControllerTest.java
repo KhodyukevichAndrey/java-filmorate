@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.UserController;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
+import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
@@ -27,7 +27,7 @@ class UserControllerTest {
     void testEnvironment() {
         UserStorage userStorage = new InMemoryUserStorage();
         UserService userService = new UserService(userStorage);
-        userController = new UserController(userStorage, userService);
+        userController = new UserController(userService);
         user = new User("user@yandex.ru", "userLogin", LocalDate.of(1950, 1, 5));
         user.setName("userName");
         userWithoutName = new User("user@yandex.ru",
@@ -79,7 +79,7 @@ class UserControllerTest {
     void checkUserValidationForUpdateWithWrongId() {
         userController.addUser(user);
 
-        assertThrows(UserNotFoundException.class, () -> userController.updateUser(userWithWrongIdForUpdate),
+        assertThrows(EntityNotFoundException.class, () -> userController.updateUser(userWithWrongIdForUpdate),
                 "При попытке обновить данные пользователя с несуществующим id, " +
                         "должно быть выброшено исключение валидации");
         assertEquals(user, userController.getUsers().get(0),

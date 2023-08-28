@@ -1,32 +1,37 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
+
+import javax.validation.ConstraintViolationException;
 
 @RestControllerAdvice
+@Slf4j
 public class ErrorHandler {
 
-    @ExceptionHandler
+    @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse handleFilmNotFound(final FilmNotFoundException exception) {
+    public ErrorResponse handleEntityNotFound(final EntityNotFoundException exception) {
+        log.debug("Получен статус 404 Not found {}", exception.getMessage(), exception);
         return new ErrorResponse(exception.getMessage());
     }
 
     @ExceptionHandler
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse handleUserNotFound(final UserNotFoundException exception) {
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleUndefinedException(final Throwable exception) {
+        log.debug("Получен статус 500 Internal Server Error {}", exception.getMessage(), exception);
         return new ErrorResponse(exception.getMessage());
     }
 
     @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleValidation(final ValidationException exception) {
-        return new ErrorResponse(exception.getMessage());
+    public ResponseEntity<String> handleValidateException(ConstraintViolationException exception) {
+        log.debug("Получен статус 400 Bad Request {}", exception.getMessage(), exception);
+        return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     static class ErrorResponse {

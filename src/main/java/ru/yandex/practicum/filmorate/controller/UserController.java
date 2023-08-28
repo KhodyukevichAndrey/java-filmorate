@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -15,37 +14,35 @@ import java.util.List;
 @Slf4j
 public class UserController {
 
-    private final UserStorage userStorage;
     private final UserService userService;
 
     @Autowired
-    public UserController(UserStorage userStorage, UserService userService) {
-        this.userStorage = userStorage;
+    public UserController(UserService userService) {
         this.userService = userService;
     }
 
     @PostMapping
     public User addUser(@Valid @RequestBody User user) {
         log.debug("Получен запрос POST /users");
-        return userStorage.addUser(user);
+        return userService.addUser(user);
     }
 
     @PutMapping
     public User updateUser(@Valid @RequestBody User user) {
         log.debug("Получен запрос PUT /users");
-        return userStorage.updateUser(user);
+        return userService.updateUser(user);
     }
 
     @GetMapping
     public List<User> getUsers() {
         log.debug("Получен запрос GET /users");
-        return userStorage.getAllUsers();
+        return userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
     public User getUser(@PathVariable Integer id) {
         log.debug("Получен запрос GET /users/{id}");
-        return userStorage.getUser(id);
+        return userService.getUser(id);
     }
 
     @PutMapping("/{id}/friends/{friendId}")

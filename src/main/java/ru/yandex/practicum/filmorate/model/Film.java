@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import ru.yandex.practicum.filmorate.validator.ReleaseDate;
 
@@ -22,8 +23,8 @@ public class Film {
     @NotNull
     @ReleaseDate
     private final LocalDate releaseDate;
-    @NotNull
     @Positive
     private final int duration;
+    @JsonIgnore
     private Set<Integer> likes = new HashSet<>();
 }

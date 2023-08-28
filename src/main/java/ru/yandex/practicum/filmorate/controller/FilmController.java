@@ -2,50 +2,50 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Positive;
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/films")
 @Slf4j
 public class FilmController {
 
-    private final FilmStorage filmStorage;
     private final FilmService filmService;
 
     @Autowired
-    public FilmController(FilmStorage inMemoryFilmStorage, FilmService filmService) {
-        this.filmStorage = inMemoryFilmStorage;
+    public FilmController(FilmService filmService) {
         this.filmService = filmService;
     }
 
     @PostMapping
     public Film addFilm(@Valid @RequestBody Film film) {
         log.debug("Получен запрос POST /films");
-        return filmStorage.addFilm(film);
+        return filmService.addFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
         log.debug("Получен запрос PUT /films");
-        return filmStorage.updateFilm(film);
+        return filmService.updateFilm(film);
     }
 
     @GetMapping
     public List<Film> getFilms() {
         log.debug("Получен запрос GET /films");
-        return filmStorage.getAllFilms();
+        return filmService.getAllFilms();
     }
 
     @GetMapping("/{id}")
     public Film getFilm(@PathVariable Integer id) {
         log.debug("Получен запрос GET /films/{id}");
-        return filmStorage.getFilm(id);
+        return filmService.getFilm(id);
     }
 
     @PutMapping("/{id}/like/{userId}")
@@ -61,7 +61,7 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10", required = false) Integer count) {
+    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") @Positive Integer count) {
         log.debug("Получен запрос GET /films/popular?count={count}");
         return filmService.getPopularFilms(count);
     }

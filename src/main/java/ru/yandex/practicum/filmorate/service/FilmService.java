@@ -42,8 +42,7 @@ public class FilmService {
     }
 
     public void addLike(Integer filmId, Integer userId) {
-        Film film = filmStorage.getFilm(filmId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_FILM_ID));
+        Film film = getFilm(filmId);
         userStorage.getUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
 
@@ -51,8 +50,7 @@ public class FilmService {
     }
 
     public void removeLike(Integer filmId, Integer userId) {
-        Film film = filmStorage.getFilm(filmId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_FILM_ID));
+        Film film = getFilm(filmId);
         userStorage.getUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
 
@@ -61,7 +59,7 @@ public class FilmService {
 
     public List<Film> getPopularFilms(Integer count) {
         return filmStorage.getAllFilms().stream()
-                .sorted((film0, film1) -> compare(film1.getLikes().size(), film0.getLikes().size()))
+                .sorted((film0, film1) -> compare(film1.getLikesSize(), film0.getLikesSize()))
                 .limit(count)
                 .collect(Collectors.toList());
     }

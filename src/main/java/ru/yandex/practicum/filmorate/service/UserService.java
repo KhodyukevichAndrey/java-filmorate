@@ -43,28 +43,23 @@ public class UserService {
     }
 
     public void addFriend(Integer userId, Integer userFriendId) {
-        User user = userStorage.getUser(userId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
-        User userFriend = userStorage.getUser(userFriendId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
+        User user = getUser(userId);
+        User userFriend = getUser(userFriendId);
 
         user.getFriends().add(userFriendId);
         userFriend.getFriends().add(userId);
     }
 
     public void deleteFriend(Integer userId, Integer userFriendId) {
-        User user = userStorage.getUser(userId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
-        User userFriend = userStorage.getUser(userFriendId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
+        User user = getUser(userId);
+        User userFriend = getUser(userFriendId);
 
         user.getFriends().remove(userFriendId);
         userFriend.getFriends().remove(userId);
     }
 
     public List<User> getFriendsList(Integer id) {
-        User currentUser = userStorage.getUser(id)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
+        User currentUser = getUser(id);
 
         return currentUser.getFriends().stream()
                 .map(userStorage::getUser)
@@ -74,18 +69,14 @@ public class UserService {
     }
 
     public List<User> getCommonFriends(Integer currentUserId, Integer anotherUserId) {
-        User currentUser = userStorage.getUser(currentUserId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
-        User anotherUser = userStorage.getUser(anotherUserId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
+        User currentUser = getUser(currentUserId);
+        User anotherUser = getUser(anotherUserId);
 
         List<Integer> currentUserFriends = currentUser.getFriends();
 
         return anotherUser.getFriends().stream()
                 .filter(currentUserFriends::contains)
-                .map(userStorage::getUser)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .map(this::getUser)
                 .collect(Collectors.toList());
     }
 

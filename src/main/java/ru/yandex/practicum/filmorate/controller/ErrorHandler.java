@@ -14,9 +14,9 @@ import javax.validation.ConstraintViolationException;
 @Slf4j
 public class ErrorHandler {
 
-    @ExceptionHandler(RuntimeException.class)
+    @ExceptionHandler(EntityNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse handleEntityNotFound(final EntityNotFoundException exception) {
+    public ErrorResponse handleEntityNotFound(final RuntimeException exception) {
         log.debug("Получен статус 404 Not found {}", exception.getMessage(), exception);
         return new ErrorResponse(exception.getMessage());
     }

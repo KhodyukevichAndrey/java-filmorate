@@ -1,27 +1,38 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static java.lang.Integer.compare;
 
 @Service
 public class FilmService {
 
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+    private final GenreStorage genreStorage;
+    private final MpaStorage mpaStorage;
     private static final String WRONG_USER_ID = "Пользователь с указанным ID не найден";
     private static final String WRONG_FILM_ID = "Фильм с указанным ID не найден";
 
-    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
+    @Autowired
+    public FilmService(@Qualifier("FilmDBStorage") FilmStorage filmStorage,
+                       @Qualifier("UserDBStorage") UserStorage userStorage,
+                       @Qualifier("GenreDBStorage") GenreStorage genreStorage,
+                       @Qualifier("MpaDBStorage") MpaStorage mpaStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
+        this.genreStorage = genreStorage;
+        this.mpaStorage = mpaStorage;
     }
 
     public Film addFilm(Film film) {
@@ -42,25 +53,40 @@ public class FilmService {
     }
 
     public void addLike(Integer filmId, Integer userId) {
-        Film film = getFilm(filmId);
+        filmStorage.getFilm(filmId)
+                .orElseThrow(() -> new EntityNotFoundException(WRONG_FILM_ID));
         userStorage.getUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
-
-        film.getLikes().add(userId);
+        filmStorage.addLike(filmId, userId);
     }
 
     public void removeLike(Integer filmId, Integer userId) {
-        Film film = getFilm(filmId);
+        filmStorage.getFilm(filmId)
+                .orElseThrow(() -> new EntityNotFoundException(WRONG_FILM_ID));
         userStorage.getUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
-
-        film.getLikes().remove(userId);
+        filmStorage.removeLike(filmId, userId);
     }
 
     public List<Film> getPopularFilms(Integer count) {
-        return filmStorage.getAllFilms().stream()
-                .sorted((film0, film1) -> compare(film1.getLikesSize(), film0.getLikesSize()))
-                .limit(count)
-                .collect(Collectors.toList());
+        return filmStorage.getPopularFilms(count);
+    }
+
+    public Genre getGenre(int genreId) {
+        return genreStorage.getGenre(genreId)
+                .orElseThrow(() -> new EntityNotFoundException("Wrong genre id"));
+    }
+
+    public List<Genre> getAllGenres() {
+        return genreStorage.getAllGenres();
+    }
+
+    public Mpa getMpa(int mpaId) {
+        return mpaStorage.getMpa(mpaId)
+                .orElseThrow(() -> new EntityNotFoundException("Wrong mpa id"));
+    }
+
+    public List<Mpa> getAllMpa() {
+        return mpaStorage.getAllMpa();
     }
 }

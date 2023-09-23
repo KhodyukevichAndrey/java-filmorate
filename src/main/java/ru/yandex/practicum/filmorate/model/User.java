@@ -1,14 +1,16 @@
 package ru.yandex.practicum.filmorate.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import javax.validation.constraints.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
+@AllArgsConstructor
 public class User {
     private int id;
     @NotEmpty
@@ -22,5 +24,5 @@ public class User {
     @PastOrPresent
     private final LocalDate birthday;
     @JsonIgnore
-    private List<Integer> friends = new ArrayList<>();
+    private Map<Integer, Boolean> friends = new HashMap<>();
 }

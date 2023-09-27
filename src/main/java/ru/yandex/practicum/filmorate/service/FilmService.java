@@ -1,12 +1,12 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
@@ -25,10 +25,10 @@ public class FilmService {
     private static final String WRONG_FILM_ID = "Фильм с указанным ID не найден";
 
     @Autowired
-    public FilmService(@Qualifier("FilmDBStorage") FilmStorage filmStorage,
-                       @Qualifier("UserDBStorage") UserStorage userStorage,
-                       @Qualifier("GenreDBStorage") GenreStorage genreStorage,
-                       @Qualifier("MpaDBStorage") MpaStorage mpaStorage) {
+    public FilmService(FilmStorage filmStorage,
+                       UserStorage userStorage,
+                       GenreStorage genreStorage,
+                       MpaStorage mpaStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
         this.genreStorage = genreStorage;
@@ -53,18 +53,14 @@ public class FilmService {
     }
 
     public void addLike(Integer filmId, Integer userId) {
-        filmStorage.getFilm(filmId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_FILM_ID));
-        userStorage.getUser(userId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
+        getFilm(filmId);
+        getUser(userId);
         filmStorage.addLike(filmId, userId);
     }
 
     public void removeLike(Integer filmId, Integer userId) {
-        filmStorage.getFilm(filmId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_FILM_ID));
-        userStorage.getUser(userId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
+        getFilm(filmId);
+        getUser(userId);
         filmStorage.removeLike(filmId, userId);
     }
 
@@ -88,5 +84,10 @@ public class FilmService {
 
     public List<Mpa> getAllMpa() {
         return mpaStorage.getAllMpa();
+    }
+
+    private User getUser(Integer userId) {
+        return userStorage.getUser(userId)
+                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
     }
 }

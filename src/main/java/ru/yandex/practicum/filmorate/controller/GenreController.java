@@ -25,11 +25,13 @@ public class GenreController {
 
     @GetMapping("/{id}")
     public Genre getGenre(@PathVariable Integer id) {
+        log.debug("Получен запрос GET /genres/{id}");
         return filmService.getGenre(id);
     }
 
     @GetMapping
     public List<Genre> getAllGenres() {
+        log.debug("Получен запрос GET /genres");
         return filmService.getAllGenres();
     }
 }

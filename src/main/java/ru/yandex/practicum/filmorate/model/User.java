@@ -1,13 +1,10 @@
 package ru.yandex.practicum.filmorate.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import javax.validation.constraints.*;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -23,6 +20,4 @@ public class User {
     @NotNull
     @PastOrPresent
     private final LocalDate birthday;
-    @JsonIgnore
-    private Map<Integer, Boolean> friends = new HashMap<>();
 }

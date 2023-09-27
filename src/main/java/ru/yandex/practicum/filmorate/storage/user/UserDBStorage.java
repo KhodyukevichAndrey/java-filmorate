@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
@@ -15,10 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
-@Qualifier("UserDBStorage")
 @Slf4j
 public class UserDBStorage implements UserStorage {
 
@@ -31,8 +28,6 @@ public class UserDBStorage implements UserStorage {
 
     @Override
     public User addUser(User user) {
-        checkUserName(user);
-
         Map<String, Object> values = new HashMap<>();
         values.put("email", user.getEmail());
         values.put("login", user.getLogin());
@@ -43,9 +38,9 @@ public class UserDBStorage implements UserStorage {
                 .withTableName("users")
                 .usingGeneratedKeyColumns("user_id");
 
-        Integer userId = simpleJdbcInsert.executeAndReturnKey(values).intValue();
+        int userId = simpleJdbcInsert.executeAndReturnKey(values).intValue();
 
-        log.debug("Пользователь " + user.getName() + " успешно создан с ID - " + userId);
+        log.debug("Пользователь успешно создан с ID = {}", userId);
         return getUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
     }
@@ -53,7 +48,6 @@ public class UserDBStorage implements UserStorage {
     @Override
     public User updateUser(User user) {
         String sqlForUpdateUser = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE user_id = ?";
-        checkUserName(user);
         int userId = user.getId();
         if (getUser(userId).isPresent()) {
             jdbcTemplate.update(sqlForUpdateUser,
@@ -63,7 +57,7 @@ public class UserDBStorage implements UserStorage {
                     user.getBirthday(),
                     userId);
         }
-        log.debug("Пользователь " + user.getName() + " успешно обновлен");
+        log.debug("Пользователь с ID = {} успешно обновлен", userId);
         return getUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
     }
@@ -78,44 +72,28 @@ public class UserDBStorage implements UserStorage {
         String sqlUser = "SELECT * FROM users WHERE user_id = ?";
         try {
             User user = jdbcTemplate.queryForObject(sqlUser, this::makeUser, userId);
+            log.debug("Пользователь с указанным ID = {} найден", userId);
             return Optional.ofNullable(user);
         } catch (DataAccessException e) {
-            throw new EntityNotFoundException(WRONG_USER_ID);
+            log.debug("Пользователь с указанным ID = {} не найден", userId);
+            return Optional.empty();
         }
     }
 
     @Override
     public void addFriend(Integer userId, Integer friendId) {
-        String sqlAddFriend = "INSERT INTO user_friend (user_id, friend_id, confirmation) VALUES (?,?,?)";
-        String sqlUpdateFriendshipForFriend = "UPDATE user_friend SET confirmation = ? WHERE user_id = ?";
+        String sqlAddFriend = "INSERT INTO user_friend (user_id, friend_id) VALUES (?,?)";
 
-        List<Integer> friendFriendsList = getFriendsList(friendId).stream()
-                .map(User::getId)
-                .collect(Collectors.toList());
-
-        if (friendFriendsList.contains(userId)) {
-            jdbcTemplate.update(sqlAddFriend, userId, friendId, true);
-            jdbcTemplate.update(sqlUpdateFriendshipForFriend, true, friendId);
-        } else {
-            jdbcTemplate.update(sqlAddFriend, userId, friendId, false);
-        }
-        log.debug("Статус дружбы между пользователями успешно обновлен");
+        jdbcTemplate.update(sqlAddFriend, userId, friendId);
+        log.debug("Пользователь {} успешно добавил в друзья {} ", userId, friendId);
     }
 
     @Override
     public void deleteFriend(Integer userId, Integer friendId) {
         String sqlDeleteFriend = "DELETE FROM user_friend WHERE user_id = ? AND friend_id = ?";
-        String sqlUpdateFriendshipForFriend = "UPDATE user_friend SET confirmation = ? WHERE user_id = ?";
-
-        List<Integer> friendFriendsList = getFriendsList(friendId).stream()
-                .map(User::getId)
-                .collect(Collectors.toList());
 
         jdbcTemplate.update(sqlDeleteFriend, userId, friendId);
-        if (friendFriendsList.contains(userId)) {
-            jdbcTemplate.update(sqlUpdateFriendshipForFriend, false, friendId);
-        }
-        log.debug("Статус дружбы между пользователями успешно обновлен");
+        log.debug("Пользователь {} успешно удалил из друзей {} ", userId, friendId);
     }
 
     @Override
@@ -145,27 +123,9 @@ public class UserDBStorage implements UserStorage {
                     rs.getString("email"),
                     rs.getString("login"),
                     rs.getString("name"),
-                    rs.getDate("birthday").toLocalDate(),
-                    makeFriends(userId));
+                    rs.getDate("birthday").toLocalDate());
         } catch (DataAccessException e) {
             throw new EntityNotFoundException(WRONG_USER_ID);
-        }
-    }
-
-    private Map<Integer, Boolean> makeFriends(Integer userId) {
-        Map<Integer, Boolean> friends = new HashMap<>();
-        jdbcTemplate.query("SELECT * " +
-                "FROM user_friend " +
-                "WHERE user_id = ?", (rs, rowNum) ->
-                friends.put(rs.getInt("friend_id"), rs.getBoolean("confirmation")), userId);
-        return friends;
-    }
-
-    private void checkUserName(User user) {
-        String name = user.getName();
-        if (name == null || name.isBlank()) {
-            log.debug("Имя пользователя не задано -> name = login");
-            user.setName(user.getLogin());
         }
     }
 }

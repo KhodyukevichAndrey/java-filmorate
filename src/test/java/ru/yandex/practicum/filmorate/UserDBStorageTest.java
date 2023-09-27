@@ -12,7 +12,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserDBStorage;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,9 +34,9 @@ class UserDBStorageTest {
     @BeforeEach
     void createUserTestEnvironment() {
         user = new User(0, "userEmail", "userLogin", "userName",
-                LocalDate.of(1950, 1, 5), new HashMap<>());
+                LocalDate.of(1950, 1, 5));
         friend = new User(0, "friendEmail", "friendLogin", "friendName",
-                LocalDate.of(1950, 2, 5), new HashMap<>());
+                LocalDate.of(1950, 2, 5));
 
         userAfterCreate = userStorage.addUser(user);
         friendAfterCreate = userStorage.addUser(friend);
@@ -139,8 +138,8 @@ class UserDBStorageTest {
 
     @Test
     void shouldReturnCommonFriendsWithAnotherUser() {
-        User commonFriend = new User(0, "userEmail", "userLogin", "userName",
-                LocalDate.of(1950, 1, 5), new HashMap<>());
+        User commonFriend = new User(0, "commonUserEmail", "commonUserLogin", "commonUserName",
+                LocalDate.of(1950, 1, 5));
         User commonFriendAfterCreate = userStorage.addUser(commonFriend);
 
         userStorage.addFriend(1, 3);

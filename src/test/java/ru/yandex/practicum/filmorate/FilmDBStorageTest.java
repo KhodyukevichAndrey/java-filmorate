@@ -42,14 +42,14 @@ class FilmDBStorageTest {
     @BeforeEach
     void createFilmTestEnvironment() {
         user = new User(0, "userEmail", "userLogin", "userName",
-                LocalDate.of(1950, 1, 5), new HashMap<>());
+                LocalDate.of(1950, 1, 5));
         anotherUser = new User(0, "friendEmail", "friendLogin", "friendName",
-                LocalDate.of(1950, 2, 5), new HashMap<>());
+                LocalDate.of(1950, 2, 5));
         film = new Film(0, "firstFilm", "firstDescription",
-                LocalDate.of(1950, 3, 5), 100, new HashSet<>(),
+                LocalDate.of(1950, 3, 5), 100,
                 new Mpa(1, null, null), new HashSet<>());
         anotherFilm = new Film(0, "secondFilm", "secondDescription",
-                LocalDate.of(1950, 4, 5), 150, new HashSet<>(),
+                LocalDate.of(1950, 4, 5), 150,
                 new Mpa(2, null, null), new HashSet<>());
 
         userAfterCreate = userStorage.addUser(user);
@@ -78,7 +78,7 @@ class FilmDBStorageTest {
     @Test
     void shouldUpdateFilm() {
         Film filmForUpdate = new Film(1, "newName", "firstDescription",
-                LocalDate.of(1950, 3, 5), 100, new HashSet<>(),
+                LocalDate.of(1950, 3, 5), 100,
                 new Mpa(1, null, null), new HashSet<>());
         Film filmAfterUpdate = filmStorage.updateFilm(filmForUpdate);
 
@@ -114,48 +114,41 @@ class FilmDBStorageTest {
 
     @Test
     void shouldAddLikeToFilm() {
-        assertEquals(0, filmAfterCreate.getLikes().size(),
-                "После создания фильма кол-во лайков должно быть равно 0");
+        List<Integer> likes = jdbcTemplate.query("SELECT user_id FROM film_likes WHERE film_id = ?",
+                (rs, rowNum) -> rs.getInt("user_id"), 1);
+
+        assertEquals(0, likes.size(), "Количество лайков должно быть равно 0");
 
         filmStorage.addLike(1, 1);
 
-        Optional<Film> filmOptional = filmStorage.getFilm(1);
+        List<Integer> likesAfterAddLike = jdbcTemplate.query("SELECT user_id FROM film_likes WHERE film_id = ?",
+                (rs, rowNum) -> rs.getInt("user_id"), 1);
 
-        assertThat(filmOptional)
-                .isPresent()
-                .hasValueSatisfying((film1 ->
-                        assertEquals(1, film1.getLikes().size(),
-                                "После лайка размер списка должен быть увеличен на 1")));
-        assertThat(filmOptional)
-                .isPresent()
-                .hasValueSatisfying((film1 ->
-                        assertTrue(film1.getLikes().contains(1),
-                                "Список лайков должен содержать ID пользователя")));
+        assertEquals(1, likesAfterAddLike.size(), "После добавления лайка, " +
+                "их количество должно быть увеличено на 1");
+        assertEquals(1, likesAfterAddLike.get(0), "ID пользователя, " +
+                "который поставил лайк не соответствует");
     }
 
     @Test
     void shouldRemoveLikeFromFilm() {
-        assertEquals(0, filmAfterCreate.getLikes().size(),
-                "После создания фильма кол-во лайков должно быть равно 0");
+        List<Integer> likes = jdbcTemplate.query("SELECT user_id FROM film_likes WHERE film_id = ?",
+                (rs, rowNum) -> rs.getInt("user_id"), 1);
+
+        assertEquals(0, likes.size(), "Количество лайков должно быть равно 0");
 
         filmStorage.addLike(1, 1);
         filmStorage.addLike(1, 2);
 
         filmStorage.removeLike(1, 1);
 
-        Optional<Film> filmOptional = filmStorage.getFilm(1);
+        List<Integer> likesAfterRemoveLike = jdbcTemplate.query("SELECT user_id FROM film_likes WHERE film_id = ?",
+                (rs, rowNum) -> rs.getInt("user_id"), 1);
 
-        assertThat(filmOptional)
-                .isPresent()
-                .hasValueSatisfying((film1 ->
-                        assertEquals(1, film1.getLikes().size(),
-                                "После удаления лайка размер списка должен быть уменьшен на 1")));
-        assertThat(filmOptional)
-                .isPresent()
-                .hasValueSatisfying((film1 ->
-                        assertTrue(film1.getLikes().contains(2),
-                                "После удаления лайка 1 пользователя, " +
-                                        "в списке должен оставаться лайк 2 пользователя")));
+        assertEquals(1, likesAfterRemoveLike.size(),
+                "Количество оставшихся лайков должно быть равно 1");
+        assertEquals(2, likesAfterRemoveLike.get(0), "ID пользователя, " +
+                "от которого остался лайк не соответствует");
     }
 
     @Test

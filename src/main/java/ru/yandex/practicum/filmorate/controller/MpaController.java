@@ -25,11 +25,13 @@ public class MpaController {
 
     @GetMapping("/{id}")
     public Mpa getMpa(@PathVariable Integer id) {
+        log.debug("Получен запрос GET /mpa/{id}");
         return filmService.getMpa(id);
     }
 
     @GetMapping
     public List<Mpa> getAllMpa() {
+        log.debug("Получен запрос GET /mpa");
         return filmService.getAllMpa();
     }
 }

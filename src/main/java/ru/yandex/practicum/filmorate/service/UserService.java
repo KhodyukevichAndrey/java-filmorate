@@ -8,8 +8,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -43,41 +41,26 @@ public class UserService {
     }
 
     public void addFriend(Integer userId, Integer userFriendId) {
-        User user = getUser(userId);
-        User userFriend = getUser(userFriendId);
-
-        user.getFriends().add(userFriendId);
-        userFriend.getFriends().add(userId);
+        getUser(userId);
+        getUser(userFriendId);
+        userStorage.addFriend(userId, userFriendId);
     }
 
     public void deleteFriend(Integer userId, Integer userFriendId) {
-        User user = getUser(userId);
-        User userFriend = getUser(userFriendId);
-
-        user.getFriends().remove(userFriendId);
-        userFriend.getFriends().remove(userId);
+        getUser(userId);
+        getUser(userFriendId);
+        userStorage.deleteFriend(userId, userFriendId);
     }
 
-    public List<User> getFriendsList(Integer id) {
-        User currentUser = getUser(id);
-
-        return currentUser.getFriends().stream()
-                .map(userStorage::getUser)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toList());
+    public List<User> getFriendsList(Integer userId) {
+        getUser(userId);
+        return userStorage.getFriendsList(userId);
     }
 
     public List<User> getCommonFriends(Integer currentUserId, Integer anotherUserId) {
-        User currentUser = getUser(currentUserId);
-        User anotherUser = getUser(anotherUserId);
-
-        List<Integer> currentUserFriends = currentUser.getFriends();
-
-        return anotherUser.getFriends().stream()
-                .filter(currentUserFriends::contains)
-                .map(this::getUser)
-                .collect(Collectors.toList());
+        getUser(currentUserId);
+        getUser(anotherUserId);
+        return userStorage.getCommonFriends(currentUserId, anotherUserId);
     }
 
     private void checkUserName(User user) {

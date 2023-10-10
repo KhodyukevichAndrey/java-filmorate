@@ -169,7 +169,7 @@ public class FilmDBStorage implements FilmStorage {
                 "JOIN film_likes fl ON f.film_id = fl.film_id " +
                 "WHERE fd.director_id = ? " +
                 "GROUP BY f.film_id " +
-                "ORDER BY COUNT(fl.user_id) DESC";
+                "ORDER BY COUNT(fl.user_id) ASC";
 
         if (sortBy.equals("year")) {
             sortedFilms = jdbcTemplate.query(sqlSortByYear, this::makeFilm, directorId);

@@ -153,23 +153,23 @@ public class FilmDBStorage implements FilmStorage {
         List<Film> sortedFilms;
         String sqlWithoutSort = "SELECT f.*, m.* " +
                 "FROM films f " +
-                "JOIN mpa m ON f.mpa_id = m.mpa_id " +
-                "JOIN film_directors fd ON f.film_id = fd.film_id " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.mpa_id " +
+                "LEFT JOIN film_directors fd ON f.film_id = fd.film_id " +
                 "WHERE director_id = ?";
         String sqlSortByYear = "SELECT f.*, m.* " +
                 "FROM films f " +
-                "JOIN mpa m ON f.mpa_id = m.mpa_id " +
-                "JOIN film_directors fd ON f.film_id = fd.film_id " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.mpa_id " +
+                "LEFT JOIN film_directors fd ON f.film_id = fd.film_id " +
                 "WHERE fd.director_id = ? " +
                 "ORDER BY f.release_date ASC";
         String sqlSortByLikes = "SELECT f.*, m.* " +
                 "FROM films f " +
-                "JOIN mpa m ON f.mpa_id = m.mpa_id " +
-                "JOIN film_directors fd ON f.film_id = fd.film_id " +
-                "JOIN film_likes fl ON f.film_id = fl.film_id " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.mpa_id " +
+                "LEFT JOIN film_directors fd ON f.film_id = fd.film_id " +
+                "LEFT JOIN film_likes fl ON f.film_id = fl.film_id " +
                 "WHERE fd.director_id = ? " +
                 "GROUP BY f.film_id " +
-                "ORDER BY COUNT(fl.user_id) ASC";
+                "ORDER BY COUNT (fl.user_id) DESC";
 
         if (sortBy.equals("year")) {
             sortedFilms = jdbcTemplate.query(sqlSortByYear, this::makeFilm, directorId);

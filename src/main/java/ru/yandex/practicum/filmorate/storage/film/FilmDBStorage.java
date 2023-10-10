@@ -151,18 +151,18 @@ public class FilmDBStorage implements FilmStorage {
     @Override
     public List<Film> getDirectorFilms(Integer directorId, String sortBy) {
         List<Film> sortedFilms;
-        String sqlWithoutSort = "SELECT * " +
+        String sqlWithoutSort = "SELECT f.*, m.* " +
                 "FROM films f " +
                 "JOIN mpa m ON f.mpa_id = m.mpa_id " +
                 "JOIN film_directors fd ON f.film_id = fd.film_id " +
                 "WHERE director_id = ?";
-        String sqlSortByYear = "SELECT * " +
+        String sqlSortByYear = "SELECT f.*, m.* " +
                 "FROM films f " +
                 "JOIN mpa m ON f.mpa_id = m.mpa_id " +
                 "JOIN film_directors fd ON f.film_id = fd.film_id " +
                 "WHERE fd.director_id = ? " +
                 "ORDER BY f.release_date ASC";
-        String sqlSortByLikes = "SELECT * " +
+        String sqlSortByLikes = "SELECT f.*, m.* " +
                 "FROM films f " +
                 "JOIN mpa m ON f.mpa_id = m.mpa_id " +
                 "JOIN film_directors fd ON f.film_id = fd.film_id " +

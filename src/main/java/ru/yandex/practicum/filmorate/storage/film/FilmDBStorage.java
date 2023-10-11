@@ -225,4 +225,9 @@ public class FilmDBStorage implements FilmStorage {
                     }
                 });
     }
+
+    public void deleteFilmById(int filmId) {
+        String sql = "DELETE FROM films WHERE film_id = ?";
+        jdbcTemplate.update(sql, filmId);
+    }
 }

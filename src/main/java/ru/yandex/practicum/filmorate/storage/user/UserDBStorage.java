@@ -131,6 +131,9 @@ public class UserDBStorage implements UserStorage {
 
     @Override
     public void deleteUserById(int userId) {
+        if (!getUser(userId).isPresent()) {
+            throw new EntityNotFoundException("Пользователь с id: " + userId + " не найден.");
+        }
         String sql = "DELETE FROM users WHERE user_id = ?;";
         jdbcTemplate.update(sql, userId);
     }

@@ -227,6 +227,9 @@ public class FilmDBStorage implements FilmStorage {
     }
 
     public void deleteFilmById(int filmId) {
+        if (!getFilm(filmId).isPresent()) {
+            throw new EntityNotFoundException("Фильм с id: " + filmId + " не найден.");
+        }
         String sql = "DELETE FROM films WHERE film_id = ?";
         jdbcTemplate.update(sql, filmId);
     }

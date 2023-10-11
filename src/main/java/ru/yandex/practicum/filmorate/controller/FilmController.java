@@ -65,4 +65,11 @@ public class FilmController {
         log.debug("Получен запрос GET /films/popular?count={count}");
         return filmService.getPopularFilms(count);
     }
+
+    @DeleteMapping("/{filmId}")
+    public String deleteFilmById(@PathVariable int filmId) {
+        log.info("Получен запрос DELETE/{filmId}");
+        filmService.deleteFilmById(filmId);
+        return "Фильм с id: " + filmId + " удалён.";
+    }
 }

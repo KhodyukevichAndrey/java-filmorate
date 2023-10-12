@@ -70,4 +70,17 @@ public class FilmController {
     public List<Film> getCommonFilms(@RequestParam int userId, @RequestParam int friendId) {
         return filmService.getCommonFilms(userId, friendId);
     }
+
+    @DeleteMapping("/{filmId}")
+    public String deleteFilmById(@PathVariable int filmId) {
+        log.info("Получен запрос DELETE/{filmId}");
+        filmService.deleteFilmById(filmId);
+        return "Фильм с id: " + filmId + " удалён.";
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<Film> getSortedFilmsByDirector(@PathVariable @Positive Integer directorId,
+                                               @RequestParam(defaultValue = "noSort") String sortBy) {
+        return filmService.getSortedDirectorFilms(directorId, sortBy);
+    }
 }

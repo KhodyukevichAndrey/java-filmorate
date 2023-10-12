@@ -70,4 +70,9 @@ public class UserService {
             user.setName(user.getLogin());
         }
     }
+
+    public void deleteUserById(int userId) {
+        userStorage.deleteUserById(userId);
+        log.info("Пользователь с id: {} удалён.", userId);
+    }
 }

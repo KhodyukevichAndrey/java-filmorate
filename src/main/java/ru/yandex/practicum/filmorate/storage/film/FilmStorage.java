@@ -21,5 +21,7 @@ public interface FilmStorage {
 
     List<Film> getPopularFilms(Integer count);
 
+    void deleteFilmById(int filmId);
+
     List<Film> getDirectorFilms(Integer directorId, String sortBy);
 }

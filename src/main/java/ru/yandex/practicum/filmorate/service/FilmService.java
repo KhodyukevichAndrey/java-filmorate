@@ -90,4 +90,10 @@ public class FilmService {
         return userStorage.getUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
     }
+
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        getUser(userId);
+        getUser(friendId);
+        return filmStorage.getCommonFilms(userId, friendId);
+    }
 }

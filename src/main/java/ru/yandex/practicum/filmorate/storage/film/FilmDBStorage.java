@@ -225,4 +225,29 @@ public class FilmDBStorage implements FilmStorage {
                     }
                 });
     }
+
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        List<Film> sortedCommonFilms;
+        String sql = "SELECT *\n" +
+                "FROM FILMS \n" +
+                "INNER JOIN mpa m ON FILMS.mpa_id = m.mpa_id \n" +
+                "WHERE FILM_ID IN (SELECT FILM_ID \n" +
+                "FROM FILM_LIKES \n" +
+                "WHERE USER_ID = ?);";
+
+        String sqlSorted = "SELECT f.*, m.* " +
+                "FROM films f " +
+                "LEFT JOIN film_likes fl on f.film_id = fl.film_id " +
+                "JOIN mpa m ON f.mpa_id = m.mpa_id " +
+                "GROUP BY f.film_id, fl.film_id " +
+                "ORDER BY COUNT(fl.user_id) DESC ";
+
+        List<Film> userFilms = jdbcTemplate.query(sql, (rs, row) -> makeFilm(rs, row), userId);
+        List<Film> friendFilms = jdbcTemplate.query(sql, (rs, row) -> makeFilm(rs, row), friendId);
+        friendFilms.retainAll(userFilms);
+        sortedCommonFilms = jdbcTemplate.query(sqlSorted, (rs, row) -> makeFilm(rs, row));
+        sortedCommonFilms.retainAll(friendFilms);
+        return sortedCommonFilms;
+    }
 }

@@ -4,26 +4,35 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.film.FilmDBStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 @Slf4j
 public class UserDBStorage implements UserStorage {
 
     private final JdbcTemplate jdbcTemplate;
+    private final FilmDBStorage filmDBStorage;
     private static final String WRONG_USER_ID = "Пользователь с указанным ID не найден";
 
-    public UserDBStorage(JdbcTemplate jdbcTemplate) {
+    public UserDBStorage(JdbcTemplate jdbcTemplate, FilmDBStorage filmDBStorage) {
         this.jdbcTemplate = jdbcTemplate;
+        this.filmDBStorage = filmDBStorage;
     }
 
     @Override
@@ -115,6 +124,42 @@ public class UserDBStorage implements UserStorage {
         return jdbcTemplate.query(sqlCommonFriends, this::makeUser, userId, friendId);
     }
 
+    @Override
+    public void deleteUserById(int userId) {
+        if (!getUser(userId).isPresent()) {
+            throw new EntityNotFoundException("Пользователь с id: " + userId + " не найден.");
+        }
+        String sql = "DELETE FROM users WHERE user_id = ?;";
+        jdbcTemplate.update(sql, userId);
+    }
+
+    @Override
+    public List<Film> getRecommendations(int userId) {
+        List<Film> recommendFilms = new ArrayList<>();
+        for (User u : getAllUsers()) {
+            if (u.getId() != userId) {
+                Set<Integer> otherLikes = getLikedFilmsByUserId(userId, u.getId());
+                for (int filmId : otherLikes) {
+                    recommendFilms.add(filmDBStorage.getFilm(filmId).orElseThrow(() ->
+                            new EntityNotFoundException("Фильм с указанным ID =" + filmId + " не найден")));
+                    return recommendFilms;
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private Set<Integer> getLikedFilmsByUserId(Integer userId, Integer id) {
+        Set<Integer> userLikes = new HashSet<>();
+        String sql = "SELECT f.FILM_ID FROM (SELECT FILM_ID FROM FILM_LIKES WHERE USER_ID = ?) as f LEFT JOIN\n" +
+                "(SELECT FILM_ID from FILM_LIKES where USER_ID = ?) as u ON f.FILM_ID = u.FILM_ID WHERE u.FILM_ID is null";
+        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id, userId);
+        while (sqlRowSet.next()) {
+            userLikes.add(sqlRowSet.getInt("film_id"));
+        }
+        return userLikes;
+    }
+
     private User makeUser(ResultSet rs, int rowNum) throws SQLException {
         int userId = rs.getInt("user_id");
         try {
@@ -127,14 +172,5 @@ public class UserDBStorage implements UserStorage {
         } catch (DataAccessException e) {
             throw new EntityNotFoundException(WRONG_USER_ID);
         }
-    }
-
-    @Override
-    public void deleteUserById(int userId) {
-        if (!getUser(userId).isPresent()) {
-            throw new EntityNotFoundException("Пользователь с id: " + userId + " не найден.");
-        }
-        String sql = "DELETE FROM users WHERE user_id = ?;";
-        jdbcTemplate.update(sql, userId);
     }
 }

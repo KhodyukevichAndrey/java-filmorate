@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -48,6 +49,10 @@ public class FilmDBStorage implements FilmStorage {
             addGenres(filmId, film.getGenres());
         }
 
+        if (film.getDirectors() != null) {
+            addDirectors(filmId, film.getDirectors());
+        }
+
         log.debug("Фильм успешно создан с ID - {}", filmId);
         return getFilm(filmId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_FILM_ID));
@@ -69,10 +74,15 @@ public class FilmDBStorage implements FilmStorage {
                     film.getMpa().getId(),
                     filmId);
             removeGenres(filmId, filmOptional.get().getGenres());
+            removeDirectors(filmId, filmOptional.get().getDirectors());
         }
 
         if (film.getGenres() != null) {
             addGenres(filmId, film.getGenres());
+        }
+
+        if (film.getDirectors() != null) {
+            addDirectors(filmId, film.getDirectors());
         }
 
         log.debug("Фильм успешно обновлен по указанном ID = {}", filmId);
@@ -86,6 +96,7 @@ public class FilmDBStorage implements FilmStorage {
                 "FROM films f " +
                 "JOIN mpa m ON f.mpa_id = m.mpa_id";
         List<Film> filmsWithoutGenres = jdbcTemplate.query(sqlFilms, this::makeFilm);
+        makeFilmsWithDirectors(filmsWithoutGenres);
         return makeFilmsWithGenres(filmsWithoutGenres);
     }
 
@@ -97,6 +108,7 @@ public class FilmDBStorage implements FilmStorage {
                 "WHERE f.film_id = ? ";
         try {
             Film film = jdbcTemplate.queryForObject(sqlFilm, this::makeFilm, id);
+            makeFilmsWithDirectors(List.of(film));
             makeFilmsWithGenres(List.of(film));
             log.debug("Фильм с указанным ID = {} найден", id);
             return Optional.ofNullable(film);
@@ -132,7 +144,45 @@ public class FilmDBStorage implements FilmStorage {
                 "ORDER BY COUNT(fl.user_id) DESC " +
                 "LIMIT ?";
         List<Film> filmsWithoutGenres = jdbcTemplate.query(sqlPopularFilms, this::makeFilm, count);
+        makeFilmsWithDirectors(filmsWithoutGenres);
         return makeFilmsWithGenres(filmsWithoutGenres);
+    }
+
+    @Override
+    public List<Film> getDirectorFilms(Integer directorId, String sortBy) {
+        List<Film> sortedFilms;
+        String sqlWithoutSort = "SELECT f.*, m.* " +
+                "FROM films f " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.mpa_id " +
+                "LEFT JOIN film_directors fd ON f.film_id = fd.film_id " +
+                "WHERE director_id = ?";
+        String sqlSortByYear = "SELECT f.*, m.* " +
+                "FROM films f " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.mpa_id " +
+                "LEFT JOIN film_directors fd ON f.film_id = fd.film_id " +
+                "WHERE fd.director_id = ? " +
+                "ORDER BY f.release_date ASC";
+        String sqlSortByLikes = "SELECT f.*, m.* " +
+                "FROM films f " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.mpa_id " +
+                "LEFT JOIN film_directors fd ON f.film_id = fd.film_id " +
+                "LEFT JOIN film_likes fl ON f.film_id = fl.film_id " +
+                "WHERE fd.director_id = ? " +
+                "GROUP BY f.film_id " +
+                "ORDER BY COUNT (fl.user_id) DESC";
+
+        if (sortBy.equals("year")) {
+            sortedFilms = jdbcTemplate.query(sqlSortByYear, this::makeFilm, directorId);
+        } else if (sortBy.equals("likes")) {
+            sortedFilms = jdbcTemplate.query(sqlSortByLikes, this::makeFilm, directorId);
+        } else {
+            sortedFilms = jdbcTemplate.query(sqlWithoutSort, this::makeFilm, directorId);
+        }
+
+        makeFilmsWithDirectors(sortedFilms);
+        makeFilmsWithGenres(sortedFilms);
+
+        return sortedFilms;
     }
 
     private Film makeFilm(ResultSet rs, int rowNum) throws SQLException {
@@ -145,6 +195,7 @@ public class FilmDBStorage implements FilmStorage {
                     rs.getDate("release_date").toLocalDate(),
                     rs.getInt("duration"),
                     makeMpa(rs),
+                    new HashSet<>(),
                     new HashSet<>());
         } catch (DataAccessException e) {
             throw new EntityNotFoundException(WRONG_FILM_ID);
@@ -173,8 +224,32 @@ public class FilmDBStorage implements FilmStorage {
         return film;
     }
 
-    private int makeFilmId(ResultSet rs) throws SQLException {
-        return rs.getInt("film_genres.film_id");
+
+    private List<Film> makeFilmsWithDirectors(List<Film> films) {
+        final Map<Integer, Film> filmById = films.stream().collect(Collectors.toMap(Film::getId, Function.identity()));
+        String sqlDirectors = "SELECT * " +
+                "FROM film_directors fd " +
+                "JOIN directors d on fd.director_id = d.director_id " +
+                "WHERE fd.film_id IN (%s) " +
+                "ORDER BY d.director_id";
+        String inSql = String.join(",", Collections.nCopies(films.size(), "?"));
+
+        jdbcTemplate.query(String.format(sqlDirectors, inSql),
+                (rs, rowNum) -> addDirectorToFilm(rs, filmById.get(makeFilmId(rs))),
+                filmById.keySet().toArray());
+
+        return new ArrayList<>(filmById.values());
+    }
+
+    private Film addDirectorToFilm(ResultSet rs, Film film) throws SQLException {
+        Director director = new Director(rs.getInt("directors.director_id"),
+                rs.getString("directors.name"));
+        film.getDirectors().add(director);
+        return film;
+    }
+
+    private Integer makeFilmId(ResultSet rs) throws SQLException {
+        return rs.getInt("film_id");
     }
 
     private Mpa makeMpa(ResultSet rs) throws SQLException {
@@ -222,6 +297,81 @@ public class FilmDBStorage implements FilmStorage {
                     @Override
                     public int getBatchSize() {
                         return genresId.size();
+                    }
+                });
+    }
+
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        List<Film> sortedCommonFilms;
+        String sql = "SELECT *\n" +
+                "FROM FILMS \n" +
+                "INNER JOIN mpa m ON FILMS.mpa_id = m.mpa_id \n" +
+                "WHERE FILM_ID IN (SELECT FILM_ID \n" +
+                "FROM FILM_LIKES \n" +
+                "WHERE USER_ID = ?);";
+
+        String sqlSorted = "SELECT f.*, m.* " +
+                "FROM films f " +
+                "LEFT JOIN film_likes fl on f.film_id = fl.film_id " +
+                "JOIN mpa m ON f.mpa_id = m.mpa_id " +
+                "GROUP BY f.film_id, fl.film_id " +
+                "ORDER BY COUNT(fl.user_id) DESC ";
+
+        List<Film> userFilms = jdbcTemplate.query(sql, (rs, row) -> makeFilm(rs, row), userId);
+        List<Film> friendFilms = jdbcTemplate.query(sql, (rs, row) -> makeFilm(rs, row), friendId);
+        friendFilms.retainAll(userFilms);
+        sortedCommonFilms = jdbcTemplate.query(sqlSorted, (rs, row) -> makeFilm(rs, row));
+        sortedCommonFilms.retainAll(friendFilms);
+        return sortedCommonFilms;
+    }
+
+    public void deleteFilmById(int filmId) {
+        if (!getFilm(filmId).isPresent()) {
+            throw new EntityNotFoundException("Фильм с id: " + filmId + " не найден.");
+        }
+        String sql = "DELETE FROM films WHERE film_id = ?";
+        jdbcTemplate.update(sql, filmId);
+    }
+
+    private void removeDirectors(int filmId, Set<Director> directors) {
+        String sqlDeleteDirectors = "DELETE FROM film_directors WHERE film_id = ? AND director_id = ?";
+        List<Integer> directorsId = directors.stream()
+                .map(Director::getId)
+                .collect(Collectors.toList());
+
+        jdbcTemplate.batchUpdate(sqlDeleteDirectors,
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setInt(1, filmId);
+                        ps.setInt(2, directorsId.get(i));
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return directorsId.size();
+                    }
+                });
+    }
+
+    private void addDirectors(int filmId, Set<Director> directors) {
+        String sqlUpdateDirectors = "INSERT INTO film_directors (film_id, director_id) VALUES(?,?)";
+        List<Integer> directorsId = directors.stream()
+                .map(Director::getId)
+                .collect(Collectors.toList());
+
+        jdbcTemplate.batchUpdate(sqlUpdateDirectors,
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setInt(1, filmId);
+                        ps.setInt(2, directorsId.get(i));
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return directorsId.size();
                     }
                 });
     }

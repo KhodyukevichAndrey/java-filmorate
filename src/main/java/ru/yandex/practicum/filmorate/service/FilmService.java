@@ -101,10 +101,16 @@ public class FilmService {
     }
 
 
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        getUser(userId);
+        getUser(friendId);
+        return filmStorage.getCommonFilms(userId, friendId);
+    }
+
     public void deleteFilmById(int filmId) {
         filmStorage.deleteFilmById(filmId);
         log.info("Фильм с id: {} удалён.", filmId);
-}
+    }
 
     private Director getDirector(int directorId) {
         return directorDBStorage.getDirector(directorId)

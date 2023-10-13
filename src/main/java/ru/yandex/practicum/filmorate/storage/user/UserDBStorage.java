@@ -13,7 +13,6 @@ import ru.yandex.practicum.filmorate.storage.film.FilmDBStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,15 +42,12 @@ public class UserDBStorage implements UserStorage {
         values.put("name", user.getName());
         values.put("birthday", user.getBirthday());
 
-        SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
-                .withTableName("users")
-                .usingGeneratedKeyColumns("user_id");
+        SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("users").usingGeneratedKeyColumns("user_id");
 
         int userId = simpleJdbcInsert.executeAndReturnKey(values).intValue();
 
         log.debug("Пользователь успешно создан с ID = {}", userId);
-        return getUser(userId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
+        return getUser(userId).orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
     }
 
     @Override
@@ -59,16 +55,10 @@ public class UserDBStorage implements UserStorage {
         String sqlForUpdateUser = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE user_id = ?";
         int userId = user.getId();
         if (getUser(userId).isPresent()) {
-            jdbcTemplate.update(sqlForUpdateUser,
-                    user.getEmail(),
-                    user.getLogin(),
-                    user.getName(),
-                    user.getBirthday(),
-                    userId);
+            jdbcTemplate.update(sqlForUpdateUser, user.getEmail(), user.getLogin(), user.getName(), user.getBirthday(), userId);
         }
         log.debug("Пользователь с ID = {} успешно обновлен", userId);
-        return getUser(userId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
+        return getUser(userId).orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
     }
 
     @Override
@@ -107,20 +97,14 @@ public class UserDBStorage implements UserStorage {
 
     @Override
     public List<User> getFriendsList(Integer userId) {
-        String sqlFriendsList = "SELECT * " +
-                "FROM users u " +
-                "JOIN user_friend uf on u.user_id = uf.friend_id " +
-                "WHERE uf.user_id = ?";
+        String sqlFriendsList = "SELECT * " + "FROM users u " + "JOIN user_friend uf on u.user_id = uf.friend_id " + "WHERE uf.user_id = ?";
         return jdbcTemplate.query(sqlFriendsList, this::makeUser, userId);
     }
 
     @Override
     public List<User> getCommonFriends(Integer userId, Integer friendId) {
-        String sqlCommonFriends = "SELECT * " +
-                "FROM users u " +
-                "JOIN user_friend uf on u.user_id = uf.friend_id " +
-                "JOIN user_friend uf1 on uf.friend_id = uf1.friend_id " +
-                "WHERE uf.user_id = ? AND uf1.user_id = ?";
+        String sqlCommonFriends = "SELECT * " + "FROM users u " + "JOIN user_friend uf on u.user_id = uf.friend_id " +
+                "JOIN user_friend uf1 on uf.friend_id = uf1.friend_id " + "WHERE uf.user_id = ? AND uf1.user_id = ?";
         return jdbcTemplate.query(sqlCommonFriends, this::makeUser, userId, friendId);
     }
 
@@ -135,15 +119,10 @@ public class UserDBStorage implements UserStorage {
 
     @Override
     public List<Film> getRecommendations(int userId) {
-        List<Film> recommendFilms = new ArrayList<>();
         for (User u : getAllUsers()) {
             if (u.getId() != userId) {
                 Set<Integer> otherLikes = getLikedFilmsByUserId(userId, u.getId());
-                for (int filmId : otherLikes) {
-                    recommendFilms.add(filmDBStorage.getFilm(filmId).orElseThrow(() ->
-                            new EntityNotFoundException("Фильм с указанным ID =" + filmId + " не найден")));
-                    return recommendFilms;
-                }
+                return filmDBStorage.recommendations(otherLikes);
             }
         }
         return Collections.emptyList();
@@ -163,11 +142,7 @@ public class UserDBStorage implements UserStorage {
     private User makeUser(ResultSet rs, int rowNum) throws SQLException {
         int userId = rs.getInt("user_id");
         try {
-            return new User(
-                    userId,
-                    rs.getString("email"),
-                    rs.getString("login"),
-                    rs.getString("name"),
+            return new User(userId, rs.getString("email"), rs.getString("login"), rs.getString("name"),
                     rs.getDate("birthday").toLocalDate());
         } catch (DataAccessException e) {
             throw new EntityNotFoundException(WRONG_USER_ID);

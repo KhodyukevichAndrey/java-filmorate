@@ -382,4 +382,16 @@ public class FilmDBStorage implements FilmStorage {
                     }
                 });
     }
+
+    public List<Film> recommendations(Set<Integer> ids) {
+        String[] idStrings = ids.stream()
+                .map(String::valueOf)
+                .toArray(String[]::new);
+
+        String joinedIds = String.join(",", idStrings);
+        String sql = "SELECT f.*, m.* FROM FILMS f JOIN MPA m ON f.mpa_id = m.mpa_id where FILM_ID in (" + joinedIds + ")";
+        List<Film> films = jdbcTemplate.query(sql, this::makeFilm);
+        makeFilmsWithDirectors(films);
+        return makeFilmsWithGenres(films);
+    }
 }

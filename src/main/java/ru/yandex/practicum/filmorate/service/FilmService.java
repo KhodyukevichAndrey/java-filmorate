@@ -51,18 +51,18 @@ public class FilmService {
         return filmStorage.getAllFilms();
     }
 
-    public Film getFilm(Integer id) {
+    public Film getFilm(int id) {
         return filmStorage.getFilm(id)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_FILM_ID));
     }
 
-    public void addLike(Integer filmId, Integer userId) {
+    public void addLike(int filmId, int userId) {
         getFilm(filmId);
         getUser(userId);
         filmStorage.addLike(filmId, userId);
     }
 
-    public void removeLike(Integer filmId, Integer userId) {
+    public void removeLike(int filmId, int userId) {
         getFilm(filmId);
         getUser(userId);
         filmStorage.removeLike(filmId, userId);
@@ -90,12 +90,14 @@ public class FilmService {
         return mpaStorage.getAllMpa();
     }
 
+
     public List<Film> getSortedDirectorFilms(int directorId, String sortBy) {
         getDirector(directorId);
         return filmStorage.getDirectorFilms(directorId, sortBy);
     }
 
-    private User getUser(Integer userId) {
+
+    private User getUser(int userId) {
         return userStorage.getUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
     }

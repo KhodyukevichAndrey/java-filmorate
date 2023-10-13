@@ -68,7 +68,7 @@ public class UserDBStorage implements UserStorage {
     }
 
     @Override
-    public Optional<User> getUser(Integer userId) {
+    public Optional<User> getUser(int userId) {
         String sqlUser = "SELECT * FROM users WHERE user_id = ?";
         try {
             User user = jdbcTemplate.queryForObject(sqlUser, this::makeUser, userId);

@@ -36,7 +36,7 @@ public class UserService {
         return userStorage.getAllUsers();
     }
 
-    public User getUser(Integer id) {
+    public User getUser(int id) {
         return userStorage.getUser(id)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
     }

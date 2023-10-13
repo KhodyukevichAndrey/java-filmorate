@@ -13,7 +13,7 @@ public interface UserStorage {
 
     List<User> getAllUsers();
 
-    Optional<User> getUser(Integer userId);
+    Optional<User> getUser(int userId);
 
     void addFriend(Integer userId, Integer friendId);
 

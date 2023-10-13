@@ -90,7 +90,7 @@ public class FilmDBStorage implements FilmStorage {
     }
 
     @Override
-    public Optional<Film> getFilm(Integer id) {
+    public Optional<Film> getFilm(int id) {
         String sqlFilm = "SELECT f.*, m.* " +
                 "FROM films f " +
                 "JOIN mpa m ON f.mpa_id = m.mpa_id " +
@@ -107,7 +107,7 @@ public class FilmDBStorage implements FilmStorage {
     }
 
     @Override
-    public void addLike(Integer filmId, Integer userId) {
+    public void addLike(int filmId, int userId) {
         jdbcTemplate.update("INSERT INTO film_likes (film_id, user_id) VALUES(?,?)",
                 filmId,
                 userId);
@@ -115,7 +115,7 @@ public class FilmDBStorage implements FilmStorage {
     }
 
     @Override
-    public void removeLike(Integer filmId, Integer userId) {
+    public void removeLike(int filmId, int userId) {
         jdbcTemplate.update("DELETE FROM film_likes WHERE film_id = ? AND user_id = ?",
                 filmId,
                 userId);
@@ -173,7 +173,7 @@ public class FilmDBStorage implements FilmStorage {
         return film;
     }
 
-    private Integer makeFilmId(ResultSet rs) throws SQLException {
+    private int makeFilmId(ResultSet rs) throws SQLException {
         return rs.getInt("film_genres.film_id");
     }
 

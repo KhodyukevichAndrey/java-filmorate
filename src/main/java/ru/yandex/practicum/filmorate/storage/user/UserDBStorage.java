@@ -5,7 +5,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.constants.MyConctants;
+import ru.yandex.practicum.filmorate.constants.MyConstants;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Feed;
@@ -86,7 +86,7 @@ public class UserDBStorage implements UserStorage {
     public void addFriend(Integer userId, Integer friendId) {
         String sqlAddFriend = "INSERT INTO user_friend (user_id, friend_id) VALUES (?,?)";
         jdbcTemplate.update(sqlAddFriend, userId, friendId);
-        jdbcTemplate.update(MyConctants.SQLFEEDUSER, userId, friendId, 3, 2, LocalDateTime.now());
+        jdbcTemplate.update(MyConstants.SQLFEEDUSER, userId, friendId, 1, 3, 2, LocalDateTime.now());
         log.debug("Пользователь {} успешно добавил в друзья {} ", userId, friendId);
     }
 
@@ -94,7 +94,7 @@ public class UserDBStorage implements UserStorage {
     public void deleteFriend(Integer userId, Integer friendId) {
         String sqlDeleteFriend = "DELETE FROM user_friend WHERE user_id = ? AND friend_id = ?";
         jdbcTemplate.update(sqlDeleteFriend, userId, friendId);
-        jdbcTemplate.update(MyConctants.SQLFEEDUSER, userId, friendId, 3, 1, LocalDateTime.now());
+        jdbcTemplate.update(MyConstants.SQLFEEDUSER, userId, friendId, 1, 3, 1, LocalDateTime.now());
         log.debug("Пользователь {} успешно удалил из друзей {} ", userId, friendId);
     }
 
@@ -176,37 +176,26 @@ public class UserDBStorage implements UserStorage {
     private Feed makeFeed(ResultSet rs) throws SQLException {
         int userId = rs.getInt("user_id");
         int eventId = rs.getInt("event_id");
-        int entityId = 0;
-        if (rs.getInt("film_id") != 0) {
-            entityId = rs.getInt("film_id");
-        } else {
-            entityId = rs.getInt("user_friend_id");
-        }
+        int entityId = rs.getInt("entity_id");
         EventType eventType = getEventTypeById(rs.getInt("event_type"));
         OperationType operationType = getOperationTypeById(rs.getInt("operation"));
-        LocalDateTime localDateTime = rs.getTimestamp("time_stamp").toLocalDateTime();
+        Date date = rs.getTimestamp("time_stamp");
         return Feed.builder()
                 .userId(userId)
                 .eventType(eventType)
                 .operation(operationType)
                 .eventId(eventId)
                 .entityId(entityId)
-                .timestamp(localDateTime)
+                .timestamp(date)
                 .build();
     }
 
     @Override
     public List<Feed> getFeedsList(int id) {
-        String sqlUserFriends = "SELECT * FROM USERS WHERE user_id IN (SELECT friend_id " +
-                "FROM user_friend WHERE user_id = ?)";
+        getUser(id);
         String sql = "SELECT * FROM FEED WHERE user_id = ?";
-        List<User> userFriendsList = jdbcTemplate.query(sqlUserFriends, (rs, intRow) -> makeUser(rs, intRow), id);
         List<Feed> feedsList = new ArrayList<>();
-        if (!userFriendsList.isEmpty()) {
-            for (User user : userFriendsList) {
-                feedsList.addAll(jdbcTemplate.query(sql, (rs, rowNum) -> makeFeed(rs), user.getId()));
-            }
-        }
+        feedsList = jdbcTemplate.query(sql, (rs, rowNum) -> makeFeed(rs), id);
         return feedsList;
     }
 }

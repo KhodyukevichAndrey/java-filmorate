@@ -49,7 +49,7 @@ class FilmDBStorageTest {
         user = new User(0, "userEmail", "userLogin", "userName",
                 LocalDate.of(1950, 1, 5));
         anotherUser = new User(0, "friendEmail", "friendLogin", "friendName",
-                LocalDate.of(1950, 2, 5));
+              LocalDate.of(1950, 2, 5));
         film = new Film(0, "firstFilm", "firstDescription",
                 LocalDate.of(1950, 3, 5), 100,
                 new Mpa(1, null, null), new HashSet<>(), new HashSet<>());

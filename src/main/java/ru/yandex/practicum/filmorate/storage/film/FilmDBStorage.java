@@ -18,7 +18,14 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -110,7 +117,7 @@ public class FilmDBStorage implements FilmStorage {
     }
 
     @Override
-    public Optional<Film> getFilm(Integer id) {
+    public Optional<Film> getFilm(int id) {
         String sqlFilm = "SELECT f.*, m.* " +
                 "FROM films f " +
                 "JOIN mpa m ON f.mpa_id = m.mpa_id " +
@@ -128,7 +135,7 @@ public class FilmDBStorage implements FilmStorage {
     }
 
     @Override
-    public void addLike(Integer filmId, Integer userId) {
+    public void addLike(int filmId, int userId) {
         jdbcTemplate.update("INSERT INTO film_likes (film_id, user_id) VALUES(?,?)",
                 filmId,
                 userId);
@@ -136,7 +143,7 @@ public class FilmDBStorage implements FilmStorage {
     }
 
     @Override
-    public void removeLike(Integer filmId, Integer userId) {
+    public void removeLike(int filmId, int userId) {
         jdbcTemplate.update("DELETE FROM film_likes WHERE film_id = ? AND user_id = ?",
                 filmId,
                 userId);
@@ -252,6 +259,7 @@ public class FilmDBStorage implements FilmStorage {
         return film;
     }
 
+
     private List<Film> makeFilmsWithDirectors(List<Film> films) {
         final Map<Integer, Film> filmById = films.stream().collect(Collectors.toMap(Film::getId, Function.identity()));
         String sqlDirectors = "SELECT * " +
@@ -328,6 +336,39 @@ public class FilmDBStorage implements FilmStorage {
                 });
     }
 
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        List<Film> sortedCommonFilms;
+        String sql = "SELECT *\n" +
+                "FROM FILMS \n" +
+                "INNER JOIN mpa m ON FILMS.mpa_id = m.mpa_id \n" +
+                "WHERE FILM_ID IN (SELECT FILM_ID \n" +
+                "FROM FILM_LIKES \n" +
+                "WHERE USER_ID = ?);";
+
+        String sqlSorted = "SELECT f.*, m.* " +
+                "FROM films f " +
+                "LEFT JOIN film_likes fl on f.film_id = fl.film_id " +
+                "JOIN mpa m ON f.mpa_id = m.mpa_id " +
+                "GROUP BY f.film_id, fl.film_id " +
+                "ORDER BY COUNT(fl.user_id) DESC ";
+
+        List<Film> userFilms = jdbcTemplate.query(sql, (rs, row) -> makeFilm(rs, row), userId);
+        List<Film> friendFilms = jdbcTemplate.query(sql, (rs, row) -> makeFilm(rs, row), friendId);
+        friendFilms.retainAll(userFilms);
+        sortedCommonFilms = jdbcTemplate.query(sqlSorted, (rs, row) -> makeFilm(rs, row));
+        sortedCommonFilms.retainAll(friendFilms);
+        return sortedCommonFilms;
+    }
+
+    public void deleteFilmById(int filmId) {
+        if (!getFilm(filmId).isPresent()) {
+            throw new EntityNotFoundException("Фильм с id: " + filmId + " не найден.");
+        }
+        String sql = "DELETE FROM films WHERE film_id = ?";
+        jdbcTemplate.update(sql, filmId);
+    }
+
     private void removeDirectors(int filmId, Set<Director> directors) {
         String sqlDeleteDirectors = "DELETE FROM film_directors WHERE film_id = ? AND director_id = ?";
         List<Integer> directorsId = directors.stream()
@@ -368,5 +409,17 @@ public class FilmDBStorage implements FilmStorage {
                         return directorsId.size();
                     }
                 });
+    }
+
+    public List<Film> recommendations(Set<Integer> ids) {
+        String[] idStrings = ids.stream()
+                .map(String::valueOf)
+                .toArray(String[]::new);
+
+        String joinedIds = String.join(",", idStrings);
+        String sql = "SELECT f.*, m.* FROM FILMS f JOIN MPA m ON f.mpa_id = m.mpa_id where FILM_ID in (" + joinedIds + ")";
+        List<Film> films = jdbcTemplate.query(sql, this::makeFilm);
+        makeFilmsWithDirectors(films);
+        return makeFilmsWithGenres(films);
     }
 }

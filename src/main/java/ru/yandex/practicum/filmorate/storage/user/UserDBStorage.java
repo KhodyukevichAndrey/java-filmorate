@@ -5,6 +5,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.constants.MyConctants;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Feed;
@@ -84,16 +85,16 @@ public class UserDBStorage implements UserStorage {
     @Override
     public void addFriend(Integer userId, Integer friendId) {
         String sqlAddFriend = "INSERT INTO user_friend (user_id, friend_id) VALUES (?,?)";
-
         jdbcTemplate.update(sqlAddFriend, userId, friendId);
+        jdbcTemplate.update(MyConctants.SQLFEEDUSER, userId, friendId, 3, 2, LocalDateTime.now());
         log.debug("Пользователь {} успешно добавил в друзья {} ", userId, friendId);
     }
 
     @Override
     public void deleteFriend(Integer userId, Integer friendId) {
         String sqlDeleteFriend = "DELETE FROM user_friend WHERE user_id = ? AND friend_id = ?";
-
         jdbcTemplate.update(sqlDeleteFriend, userId, friendId);
+        jdbcTemplate.update(MyConctants.SQLFEEDUSER, userId, friendId, 3, 1, LocalDateTime.now());
         log.debug("Пользователь {} успешно удалил из друзей {} ", userId, friendId);
     }
 

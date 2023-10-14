@@ -134,6 +134,7 @@ public class FilmDBStorage implements FilmStorage {
         jdbcTemplate.update("DELETE FROM film_likes WHERE film_id = ? AND user_id = ?",
                 filmId,
                 userId);
+        jdbcTemplate.update(MyConctants.SQLFEEDFILM, userId, filmId, 1,1, LocalDateTime.now());
         log.debug("Лайк пользователя c ID = {} к фильму с ID = {} успешно удален", userId, filmId);
     }
 

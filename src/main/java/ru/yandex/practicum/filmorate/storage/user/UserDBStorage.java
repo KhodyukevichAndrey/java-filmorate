@@ -6,14 +6,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Feed;
+import ru.yandex.practicum.filmorate.model.OperationType;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -136,5 +137,75 @@ public class UserDBStorage implements UserStorage {
         }
         String sql = "DELETE FROM users WHERE user_id = ?;";
         jdbcTemplate.update(sql, userId);
+    }
+
+    private EventType getEventTypeById(int id) {
+        EventType eventType = null;
+        switch (id) {
+            case 1:
+                eventType = EventType.LIKE;
+                break;
+            case 2:
+                eventType = EventType.REVIEW;
+                break;
+            case 3:
+                eventType = EventType.FRIEND;
+                break;
+        }
+        return eventType;
+    }
+
+    private OperationType getOperationTypeById(int id) {
+        OperationType operationType = null;
+        switch (id) {
+            case 1:
+                operationType = OperationType.REMOVE;
+                break;
+            case 2:
+                operationType = OperationType.ADD;
+                break;
+            case 3:
+                operationType = OperationType.UPDATE;
+                break;
+
+        }
+        return operationType;
+    }
+
+    private Feed makeFeed(ResultSet rs) throws SQLException {
+        int userId = rs.getInt("user_id");
+        int eventId = rs.getInt("event_id");
+        int entityId = 0;
+        if (rs.getInt("film_id") != 0) {
+            entityId = rs.getInt("film_id");
+        } else {
+            entityId = rs.getInt("user_friend_id");
+        }
+        EventType eventType = getEventTypeById(rs.getInt("event_type"));
+        OperationType operationType = getOperationTypeById(rs.getInt("operation"));
+        LocalDateTime localDateTime = rs.getTimestamp("time_stamp").toLocalDateTime();
+        return Feed.builder()
+                .userId(userId)
+                .eventType(eventType)
+                .operation(operationType)
+                .eventId(eventId)
+                .entityId(entityId)
+                .timestamp(localDateTime)
+                .build();
+    }
+
+    @Override
+    public List<Feed> getFeedsList(int id) {
+        String sqlUserFriends = "SELECT * FROM USERS WHERE user_id IN (SELECT friend_id " +
+                "FROM user_friend WHERE user_id = ?)";
+        String sql = "SELECT * FROM FEED WHERE user_id = ?";
+        List<User> userFriendsList = jdbcTemplate.query(sqlUserFriends, (rs, intRow) -> makeUser(rs, intRow), id);
+        List<Feed> feedsList = new ArrayList<>();
+        if (!userFriendsList.isEmpty()) {
+            for (User user : userFriendsList) {
+                feedsList.addAll(jdbcTemplate.query(sql, (rs, rowNum) -> makeFeed(rs), user.getId()));
+            }
+        }
+        return feedsList;
     }
 }

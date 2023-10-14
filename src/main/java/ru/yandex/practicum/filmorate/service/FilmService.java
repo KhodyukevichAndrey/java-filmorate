@@ -66,8 +66,11 @@ public class FilmService {
         filmStorage.removeLike(filmId, userId);
     }
 
-    public List<Film> getPopularFilms(Integer count) {
-        return filmStorage.getPopularFilms(count);
+    public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
+        if (genreId != null) {
+            getGenre(genreId);
+        }
+        return filmStorage.getPopularFilms(count, genreId, year);
     }
 
     public Genre getGenre(int genreId) {

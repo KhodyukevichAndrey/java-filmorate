@@ -4,6 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
@@ -24,10 +27,16 @@ import java.util.stream.Collectors;
 public class FilmDBStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private static final String WRONG_FILM_ID = "Фильм с указанным ID не найден";
+    private static final String SQL_ADD_GENRE_CONDITION = "WHERE f.film_id IN " +
+            "(SELECT film_id FROM film_genres WHERE genre_id = :genre_id) ";
+    private static final String SQL_ADD_YEAR_CONDITION = "WHERE EXTRACT(YEAR FROM " +
+            "cast(f.release_date AS date)) = :year ";
 
-    public FilmDBStorage(JdbcTemplate jdbcTemplate) {
+    public FilmDBStorage(JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
     }
 
     @Override
@@ -135,17 +144,36 @@ public class FilmDBStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getPopularFilms(Integer count) {
+    public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
+        List<Film> popularFilmsWithSort;
+        SqlParameterSource parameters = new MapSqlParameterSource("count", count)
+                .addValue("genre_id", genreId)
+                .addValue("year", year);
+
+
         String sqlPopularFilms = "SELECT f.*, m.* " +
                 "FROM films f " +
                 "LEFT JOIN film_likes fl on f.film_id = fl.film_id " +
-                "JOIN mpa m ON f.mpa_id = m.mpa_id " +
-                "GROUP BY f.film_id, fl.film_id " +
+                "JOIN mpa m ON f.mpa_id = m.mpa_id ";
+
+        if (genreId != null && year != null) {
+            sqlPopularFilms = sqlPopularFilms + SQL_ADD_GENRE_CONDITION + "AND EXTRACT(YEAR FROM " +
+                    "cast(f.release_date AS date)) = :year ";
+        } else if (genreId != null && year == null) {
+            sqlPopularFilms = sqlPopularFilms + SQL_ADD_GENRE_CONDITION;
+        } else if (genreId == null && year != null) {
+            sqlPopularFilms = sqlPopularFilms + SQL_ADD_YEAR_CONDITION;
+        }
+
+        String endSql = "GROUP BY f.film_id, fl.film_id " +
                 "ORDER BY COUNT(fl.user_id) DESC " +
-                "LIMIT ?";
-        List<Film> filmsWithoutGenres = jdbcTemplate.query(sqlPopularFilms, this::makeFilm, count);
-        makeFilmsWithDirectors(filmsWithoutGenres);
-        return makeFilmsWithGenres(filmsWithoutGenres);
+                "LIMIT :count";
+        sqlPopularFilms = sqlPopularFilms + endSql;
+
+        popularFilmsWithSort = namedParameterJdbcTemplate.query(sqlPopularFilms, parameters, this::makeFilm);
+        makeFilmsWithDirectors(popularFilmsWithSort);
+        makeFilmsWithGenres(popularFilmsWithSort);
+        return popularFilmsWithSort;
     }
 
     @Override

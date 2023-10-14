@@ -78,6 +78,7 @@ public class UserService {
     }
 
     public List<Feed> getFeedsList(int id) {
+        getUser(id);
         return userStorage.getFeedsList(id);
     }
 }

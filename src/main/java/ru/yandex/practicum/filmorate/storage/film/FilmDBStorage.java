@@ -15,7 +15,14 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -374,5 +381,17 @@ public class FilmDBStorage implements FilmStorage {
                         return directorsId.size();
                     }
                 });
+    }
+
+    public List<Film> recommendations(Set<Integer> ids) {
+        String[] idStrings = ids.stream()
+                .map(String::valueOf)
+                .toArray(String[]::new);
+
+        String joinedIds = String.join(",", idStrings);
+        String sql = "SELECT f.*, m.* FROM FILMS f JOIN MPA m ON f.mpa_id = m.mpa_id where FILM_ID in (" + joinedIds + ")";
+        List<Film> films = jdbcTemplate.query(sql, this::makeFilm);
+        makeFilmsWithDirectors(films);
+        return makeFilmsWithGenres(films);
     }
 }

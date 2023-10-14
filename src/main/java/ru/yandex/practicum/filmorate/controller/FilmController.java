@@ -69,9 +69,11 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") @Positive Integer count) {
-        log.debug("Получен запрос GET /films/popular?count={count}");
-        return filmService.getPopularFilms(count);
+    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") @Positive Integer count,
+                                      @RequestParam(required = false) Integer genreId,
+                                      @RequestParam(required = false) Integer year) {
+        log.debug("Получен запрос GET /films/popular?count={count}&genreId{genreId}&year={year}");
+        return filmService.getPopularFilms(count, genreId, year);
     }
 
     @GetMapping("/common")
@@ -89,6 +91,7 @@ public class FilmController {
     @GetMapping("/director/{directorId}")
     public List<Film> getSortedFilmsByDirector(@PathVariable @Positive Integer directorId,
                                                @RequestParam(defaultValue = "noSort") String sortBy) {
+        log.debug("Получен запрос GET /films//director/{directorId}?sortBy{likes|year}");
         return filmService.getSortedDirectorFilms(directorId, sortBy);
     }
 }

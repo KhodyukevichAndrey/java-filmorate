@@ -6,6 +6,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.constants.MyConctants;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -15,6 +16,7 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -123,6 +125,7 @@ public class FilmDBStorage implements FilmStorage {
         jdbcTemplate.update("INSERT INTO film_likes (film_id, user_id) VALUES(?,?)",
                 filmId,
                 userId);
+        jdbcTemplate.update(MyConctants.SQLFEEDFILM, userId, filmId, 1,2, LocalDateTime.now());
         log.debug("Лайк пользователя c ID = {} к фильму с ID = {} успешно добавлен", userId, filmId);
     }
 

@@ -121,6 +121,10 @@ public class FilmService {
         log.info("Фильм с id: {} удалён.", filmId);
     }
 
+    public List<Film> getFilmsBySearch(String query, String by) {
+        return filmStorage.getFilmsBySearch(query, by);
+    }
+
     private Director getDirector(int directorId) {
         return directorDBStorage.getDirector(directorId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_DIRECTOR_ID));

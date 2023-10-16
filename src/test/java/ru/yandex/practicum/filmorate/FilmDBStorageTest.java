@@ -173,13 +173,13 @@ class FilmDBStorageTest {
                 "от которого остался лайк не соответствует");
     }
 
-    @Test
+       @Test
     void shouldReturnPopularFilms() {
         filmStorage.addLike(1, 1);
         filmStorage.addLike(2, 2);
         filmStorage.addLike(2, 1);
 
-        List<Film> popularFilms = filmStorage.getPopularFilms(1, 1, 1955);
+        List<Film> popularFilms = filmStorage.getPopularFilms(1);
 
         Optional<Film> filmOptional = filmStorage.getFilm(2);
 

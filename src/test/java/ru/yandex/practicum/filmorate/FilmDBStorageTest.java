@@ -210,7 +210,7 @@ class FilmDBStorageTest {
         Feed feedUser = feddList.get(0);
         assertEquals(feedUser.getEventType(), EventType.LIKE);
         assertEquals(feedUser.getOperation(), OperationType.ADD);
-        jdbcTemplate.update("DELETE FROM film_likes");
+        filmStorage.removeLike(1, 1);
     }
 
     @Test
@@ -221,6 +221,5 @@ class FilmDBStorageTest {
         Feed feedUser = feddList.get(1);
         assertEquals(feedUser.getEventType(), EventType.LIKE);
         assertEquals(feedUser.getOperation(), OperationType.REMOVE);
-        jdbcTemplate.update("DELETE FROM film_likes");
     }
 }

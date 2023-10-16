@@ -14,14 +14,13 @@ import ru.yandex.practicum.filmorate.storage.film.FilmDBStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserDBStorage;
 
 import java.time.LocalDate;
+import java.util.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
@@ -79,6 +78,8 @@ class FilmDBStorageTest {
     void dropFilmAndUserStorageDataBase() {
         jdbcTemplate.update("DELETE FROM film_likes");
         jdbcTemplate.update("DELETE FROM film_genres");
+        jdbcTemplate.update("DELETE FROM feed");
+        jdbcTemplate.update("ALTER TABLE feed ALTER COLUMN event_id RESTART WITH 1");
         jdbcTemplate.update("DELETE FROM users");
         jdbcTemplate.update("ALTER TABLE users ALTER COLUMN user_id RESTART WITH 1");
         jdbcTemplate.update("DELETE FROM films");

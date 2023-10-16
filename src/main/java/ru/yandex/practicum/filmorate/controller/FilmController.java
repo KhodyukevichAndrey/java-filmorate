@@ -91,7 +91,14 @@ public class FilmController {
     @GetMapping("/director/{directorId}")
     public List<Film> getSortedFilmsByDirector(@PathVariable @Positive Integer directorId,
                                                @RequestParam(defaultValue = "noSort") String sortBy) {
-        log.debug("Получен запрос GET /films//director/{directorId}?sortBy{likes|year}");
+        log.debug("Получен запрос GET /films/director/{directorId}?sortBy{likes|year}");
         return filmService.getSortedDirectorFilms(directorId, sortBy);
+    }
+
+    @GetMapping("/search")
+    public List<Film> getFilmsBySearch(@RequestParam("query") String query,
+                                       @RequestParam("by") String by) {
+        log.debug("Получен запрос GET /films/search");
+        return filmService.getFilmsBySearch(query, by);
     }
 }

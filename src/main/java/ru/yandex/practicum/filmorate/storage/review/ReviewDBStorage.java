@@ -195,5 +195,4 @@ public class ReviewDBStorage implements ReviewStorage {
         return Optional.ofNullable(getReview(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID)));
     }
-
 }

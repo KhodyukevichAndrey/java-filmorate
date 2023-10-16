@@ -213,7 +213,7 @@ class FilmDBStorageTest {
     }
 
         @Test
-        void shouldReturnDirectorFilms () {
+        void shouldReturnDirectorFilms() {
             Optional<Film> filmOptional = filmStorage.getFilm(1);
 
             assertThat(filmOptional)

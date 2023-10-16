@@ -10,19 +10,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.storage.director.DirectorDBStorage;
-
 import ru.yandex.practicum.filmorate.storage.film.FilmDBStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserDBStorage;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
@@ -80,8 +75,6 @@ class FilmDBStorageTest {
     void dropFilmAndUserStorageDataBase() {
         jdbcTemplate.update("DELETE FROM film_likes");
         jdbcTemplate.update("DELETE FROM film_genres");
-        jdbcTemplate.update("DELETE FROM feed");
-        jdbcTemplate.update("ALTER TABLE feed ALTER COLUMN event_id RESTART WITH 1");
         jdbcTemplate.update("DELETE FROM users");
         jdbcTemplate.update("ALTER TABLE users ALTER COLUMN user_id RESTART WITH 1");
         jdbcTemplate.update("DELETE FROM films");
@@ -173,13 +166,13 @@ class FilmDBStorageTest {
                 "от которого остался лайк не соответствует");
     }
 
-       @Test
+    @Test
     void shouldReturnPopularFilms() {
         filmStorage.addLike(1, 1);
         filmStorage.addLike(2, 2);
         filmStorage.addLike(2, 1);
 
-        List<Film> popularFilms = filmStorage.getPopularFilms(1,1,1995);
+        List<Film> popularFilms = filmStorage.getPopularFilms(1, 1, 1955);
 
         Optional<Film> filmOptional = filmStorage.getFilm(2);
 
@@ -191,6 +184,23 @@ class FilmDBStorageTest {
                         assertEquals(film1, popularFilms.get(0),
                                 "Фильм полученный по ID и фильм полученный " +
                                         "в списке самых популярных должны быть эквивалентны")));
+    }
+
+    @Test
+    void shouldReturnDirectorFilms() {
+        Optional<Film> filmOptional = filmStorage.getFilm(1);
+
+        assertThat(filmOptional)
+                .isPresent()
+                .hasValueSatisfying((film1 ->
+                        assertEquals(1, film1.getDirectors().size(),
+                                "У фильма должен быть только 1 режиссёр")));
+
+        assertThat(filmOptional)
+                .isPresent()
+                .hasValueSatisfying((film2) ->
+                        assertTrue(film2.getDirectors().contains(firstDirectorAfterCreate),
+                                "Режиссёр не соответствует"));
     }
 
     @Test
@@ -211,21 +221,4 @@ class FilmDBStorageTest {
         assertEquals(feedUser.getEventType(), EventType.LIKE);
         assertEquals(feedUser.getOperation(), OperationType.REMOVE);
     }
-
-        @Test
-        void shouldReturnDirectorFilms() {
-            Optional<Film> filmOptional = filmStorage.getFilm(1);
-
-            assertThat(filmOptional)
-                    .isPresent()
-                    .hasValueSatisfying((film1 ->
-                            assertEquals(1, film1.getDirectors().size(),
-                                    "У фильма должен быть только 1 режиссёр")));
-
-            assertThat(filmOptional)
-                    .isPresent()
-                    .hasValueSatisfying((film2) ->
-                            assertTrue(film2.getDirectors().contains(firstDirectorAfterCreate),
-                                    "Режиссёр не соответствует"));
-        }
-    }
+}

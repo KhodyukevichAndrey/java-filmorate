@@ -180,17 +180,17 @@ public class UserDBStorage implements UserStorage {
         List<Feed> feedsList = new ArrayList<>();
         feedsList = jdbcTemplate.query(sql, (rs, rowNum) -> makeFeed(rs), id);
         return feedsList;
+    }
 
-        @Override
-        public List<Film> getRecommendations ( int userId){
-            for (User u : getAllUsers()) {
-                if (u.getId() != userId) {
-                    Set<Integer> otherLikes = getLikedFilmsByUserId(userId, u.getId());
-                    return filmDBStorage.recommendations(otherLikes);
-                }
+    @Override
+    public List<Film> getRecommendations(int userId) {
+        for (User u : getAllUsers()) {
+            if (u.getId() != userId) {
+                Set<Integer> otherLikes = getLikedFilmsByUserId(userId, u.getId());
+                return filmDBStorage.recommendations(otherLikes);
             }
-            return Collections.emptyList();
         }
+        return Collections.emptyList();
     }
 
     private Set<Integer> getLikedFilmsByUserId(Integer userId, Integer id) {

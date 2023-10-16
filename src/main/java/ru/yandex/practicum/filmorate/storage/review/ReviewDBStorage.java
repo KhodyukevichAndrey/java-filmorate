@@ -5,11 +5,13 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.constants.MyConstants;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,34 +35,34 @@ public class ReviewDBStorage implements ReviewStorage {
         values.put("review_body", review.getContent());
         values.put("is_positive", review.getIsPositive());
         values.put("useful", 0);
-
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("reviews")
                 .usingGeneratedKeyColumns("review_id");
-
         int reviewId = simpleJdbcInsert.executeAndReturnKey(values).intValue();
-
+        jdbcTemplate.update(MyConstants.SQLFEEDREVIEW, review.getUserId(), reviewId, 3, 2, 2,
+                LocalDateTime.now());
         log.info("Отзыв успешно создан с ID - {}", reviewId);
         return Optional.ofNullable(getReview(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID)));
-
     }
 
     @Override
     public Optional<Review> updateReview(Review review) {
+        Review reviewOld = getReview(review.getReviewId()).get();
         int reviewId = review.getReviewId();
         String sqlUpdateReview = "UPDATE reviews " +
                 "SET review_body = ?, is_positive = ? WHERE review_id = ?";
-
         Optional<Review> reviewOptional = getReview(reviewId);
-
         if (reviewOptional.isPresent()) {
             jdbcTemplate.update(sqlUpdateReview,
                     review.getContent(),
                     review.getIsPositive(),
                     reviewId);
         }
+        jdbcTemplate.update(MyConstants.SQLFEEDREVIEW, reviewOld.getUserId(), reviewOld.getReviewId(), 3, 2, 3,
+                LocalDateTime.now());
         log.info("Отзыв успешно обновлен по указанном ID = {}", reviewId);
+
         return Optional.ofNullable(getReview(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID)));
     }
@@ -125,14 +127,17 @@ public class ReviewDBStorage implements ReviewStorage {
     @Override
     public void deleteReview(int reviewId) {
         try {
-            String sqlQuery =
-                    "DELETE " +
-                            "FROM reviews " +
-                            "WHERE review_id = ?";
+            Review review = getReview(reviewId).get();
+            jdbcTemplate.update(MyConstants.SQLFEEDREVIEW, review.getUserId(), reviewId, 3, 2, 1,
+                    LocalDateTime.now());
+            String sqlQuery = "DELETE " +
+                    "FROM reviews " +
+                    "WHERE review_id = ?";
             jdbcTemplate.update(sqlQuery, reviewId);
         } catch (DataAccessException e) {
             throw new EntityNotFoundException(WRONG_REVIEW_ID);
         }
+
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.constants.MyConstants;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -18,14 +19,8 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -122,12 +117,14 @@ public class FilmDBStorage implements FilmStorage {
     @Override
     public void addLike(int filmId, int userId) {
         jdbcTemplate.update("INSERT INTO film_likes (film_id, user_id) VALUES(?,?)", filmId, userId);
+        jdbcTemplate.update(MyConstants.SQLFEEDFILM, userId, filmId, 2, 1, 2, LocalDateTime.now());
         log.debug("Лайк пользователя c ID = {} к фильму с ID = {} успешно добавлен", userId, filmId);
     }
 
     @Override
     public void removeLike(int filmId, int userId) {
         jdbcTemplate.update("DELETE FROM film_likes WHERE film_id = ? AND user_id = ?", filmId, userId);
+        jdbcTemplate.update(MyConstants.SQLFEEDFILM, userId, filmId, 2, 1, 1, LocalDateTime.now());
         log.debug("Лайк пользователя c ID = {} к фильму с ID = {} успешно удален", userId, filmId);
     }
 

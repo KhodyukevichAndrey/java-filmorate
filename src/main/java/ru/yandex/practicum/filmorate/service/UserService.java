@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -79,5 +80,10 @@ public class UserService {
     public void deleteUserById(int userId) {
         userStorage.deleteUserById(userId);
         log.info("Пользователь с id: {} удалён.", userId);
+    }
+
+    public List<Feed> getFeedsList(int id) {
+        getUser(id);
+        return userStorage.getFeedsList(id);
     }
 }

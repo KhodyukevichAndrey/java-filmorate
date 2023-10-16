@@ -6,20 +6,19 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.constants.MyConstants;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Feed;
+import ru.yandex.practicum.filmorate.model.OperationType;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmDBStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -82,16 +81,16 @@ public class UserDBStorage implements UserStorage {
     @Override
     public void addFriend(Integer userId, Integer friendId) {
         String sqlAddFriend = "INSERT INTO user_friend (user_id, friend_id) VALUES (?,?)";
-
         jdbcTemplate.update(sqlAddFriend, userId, friendId);
+        jdbcTemplate.update(MyConstants.SQLFEEDUSER, userId, friendId, 1, 3, 2, LocalDateTime.now());
         log.debug("Пользователь {} успешно добавил в друзья {} ", userId, friendId);
     }
 
     @Override
     public void deleteFriend(Integer userId, Integer friendId) {
         String sqlDeleteFriend = "DELETE FROM user_friend WHERE user_id = ? AND friend_id = ?";
-
         jdbcTemplate.update(sqlDeleteFriend, userId, friendId);
+        jdbcTemplate.update(MyConstants.SQLFEEDUSER, userId, friendId, 1, 3, 1, LocalDateTime.now());
         log.debug("Пользователь {} успешно удалил из друзей {} ", userId, friendId);
     }
 
@@ -115,6 +114,66 @@ public class UserDBStorage implements UserStorage {
         }
         String sql = "DELETE FROM users WHERE user_id = ?;";
         jdbcTemplate.update(sql, userId);
+    }
+
+
+    private EventType getEventTypeById(int id) {
+        EventType eventType = null;
+        switch (id) {
+            case 1:
+                eventType = EventType.LIKE;
+                break;
+            case 2:
+                eventType = EventType.REVIEW;
+                break;
+            case 3:
+                eventType = EventType.FRIEND;
+                break;
+        }
+        return eventType;
+    }
+
+    private OperationType getOperationTypeById(int id) {
+        OperationType operationType = null;
+        switch (id) {
+            case 1:
+                operationType = OperationType.REMOVE;
+                break;
+            case 2:
+                operationType = OperationType.ADD;
+                break;
+            case 3:
+                operationType = OperationType.UPDATE;
+                break;
+
+        }
+        return operationType;
+    }
+
+    private Feed makeFeed(ResultSet rs) throws SQLException {
+        int userId = rs.getInt("user_id");
+        int eventId = rs.getInt("event_id");
+        int entityId = rs.getInt("entity_id");
+        EventType eventType = getEventTypeById(rs.getInt("event_type"));
+        OperationType operationType = getOperationTypeById(rs.getInt("operation"));
+        Date date = rs.getTimestamp("time_stamp");
+        return Feed.builder()
+                .userId(userId)
+                .eventType(eventType)
+                .operation(operationType)
+                .eventId(eventId)
+                .entityId(entityId)
+                .timestamp(date)
+                .build();
+    }
+
+    @Override
+    public List<Feed> getFeedsList(int id) {
+        getUser(id);
+        String sql = "SELECT * FROM FEED WHERE user_id = ?";
+        List<Feed> feedsList = new ArrayList<>();
+        feedsList = jdbcTemplate.query(sql, (rs, rowNum) -> makeFeed(rs), id);
+        return feedsList;
     }
 
     @Override

@@ -179,7 +179,7 @@ class FilmDBStorageTest {
         filmStorage.addLike(2, 2);
         filmStorage.addLike(2, 1);
 
-        List<Film> popularFilms = filmStorage.getPopularFilms(1);
+        List<Film> popularFilms = filmStorage.getPopularFilms(1,1,1995);
 
         Optional<Film> filmOptional = filmStorage.getFilm(2);
 

@@ -170,8 +170,8 @@ class FilmDBStorageTest {
                                 "Фильм полученный по ID и фильм полученный " +
                                         "в списке самых популярных должны быть эквивалентны")));
     }
-  
-      @Test
+
+    @Test
     void shouldAddFeedLikeFilm() {
         filmStorage.addLike(1, 1);
         List<Feed> feddList = userStorage.getFeedsList(1);

@@ -9,17 +9,15 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.storage.director.DirectorDBStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmDBStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserDBStorage;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
@@ -30,6 +28,8 @@ class FilmDBStorageTest {
     private final FilmDBStorage filmStorage;
     @Autowired
     private final UserDBStorage userStorage;
+    @Autowired
+    private final DirectorDBStorage directorStorage;
     private final JdbcTemplate jdbcTemplate;
     User user;
     User anotherUser;
@@ -39,6 +39,10 @@ class FilmDBStorageTest {
     User friendAfterCreate;
     Film filmAfterCreate;
     Film anotherFilmAfterCreate;
+    Director firstDirector;
+    Director secondDirector;
+    Director firstDirectorAfterCreate;
+    Director secondDirectorAfterCreate;
 
     @BeforeEach
     void createFilmTestEnvironment() {
@@ -50,10 +54,17 @@ class FilmDBStorageTest {
                 LocalDate.of(1950, 3, 5), 100,
                 new Mpa(1, null, null), new HashSet<>(), new HashSet<>());
         anotherFilm = new Film(0, "secondFilm", "secondDescription",
-                LocalDate.of(1950, 4, 5), 150,
+                LocalDate.of(1955, 4, 5), 150,
                 new Mpa(2, null, null), new HashSet<>(), new HashSet<>());
+        anotherFilm.getGenres().add(new Genre(1, "Комедия"));
+        firstDirector = new Director(1, "Tarantino");
+        secondDirector = new Director(2, "Scorsese");
+        film.getDirectors().add(firstDirector);
+        anotherFilm.getDirectors().add(secondDirector);
 
 
+        firstDirectorAfterCreate = directorStorage.addDirector(firstDirector);
+        secondDirectorAfterCreate = directorStorage.addDirector(secondDirector);
         userAfterCreate = userStorage.addUser(user);
         friendAfterCreate = userStorage.addUser(anotherUser);
         filmAfterCreate = filmStorage.addFilm(film);
@@ -68,6 +79,8 @@ class FilmDBStorageTest {
         jdbcTemplate.update("ALTER TABLE users ALTER COLUMN user_id RESTART WITH 1");
         jdbcTemplate.update("DELETE FROM films");
         jdbcTemplate.update("ALTER TABLE films ALTER COLUMN film_id RESTART WITH 1");
+        jdbcTemplate.update("DELETE FROM directors");
+        jdbcTemplate.update("ALTER TABLE directors ALTER COLUMN director_id RESTART WITH 1");
     }
 
     @Test
@@ -159,7 +172,7 @@ class FilmDBStorageTest {
         filmStorage.addLike(2, 2);
         filmStorage.addLike(2, 1);
 
-        List<Film> popularFilms = filmStorage.getPopularFilms(1);
+        List<Film> popularFilms = filmStorage.getPopularFilms(1, 1, 1955);
 
         Optional<Film> filmOptional = filmStorage.getFilm(2);
 
@@ -171,6 +184,23 @@ class FilmDBStorageTest {
                         assertEquals(film1, popularFilms.get(0),
                                 "Фильм полученный по ID и фильм полученный " +
                                         "в списке самых популярных должны быть эквивалентны")));
+    }
+
+    @Test
+    void shouldReturnDirectorFilms() {
+        Optional<Film> filmOptional = filmStorage.getFilm(1);
+
+        assertThat(filmOptional)
+                .isPresent()
+                .hasValueSatisfying((film1 ->
+                        assertEquals(1, film1.getDirectors().size(),
+                                "У фильма должен быть только 1 режиссёр")));
+
+        assertThat(filmOptional)
+                .isPresent()
+                .hasValueSatisfying((film2) ->
+                        assertTrue(film2.getDirectors().contains(firstDirectorAfterCreate),
+                                "Режиссёр не соответствует"));
     }
 
     @Test

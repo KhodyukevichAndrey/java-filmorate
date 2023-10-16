@@ -4,7 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
-import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.director.DirectorDBStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
@@ -68,8 +72,11 @@ public class FilmService {
         filmStorage.removeLike(filmId, userId);
     }
 
-    public List<Film> getPopularFilms(Integer count) {
-        return filmStorage.getPopularFilms(count);
+    public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
+        if (genreId != null) {
+            getGenre(genreId);
+        }
+        return filmStorage.getPopularFilms(count, genreId, year);
     }
 
     public Genre getGenre(int genreId) {
@@ -112,6 +119,10 @@ public class FilmService {
     public void deleteFilmById(int filmId) {
         filmStorage.deleteFilmById(filmId);
         log.info("Фильм с id: {} удалён.", filmId);
+    }
+
+    public List<Film> getFilmsBySearch(String query, String by) {
+        return filmStorage.getFilmsBySearch(query, by);
     }
 
     private Director getDirector(int directorId) {

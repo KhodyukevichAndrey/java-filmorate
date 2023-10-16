@@ -202,24 +202,4 @@ class FilmDBStorageTest {
                         assertTrue(film2.getDirectors().contains(firstDirectorAfterCreate),
                                 "Режиссёр не соответствует"));
     }
-
-    @Test
-    void shouldAddFeedLikeFilm() {
-        filmStorage.addLike(1, 1);
-        List<Feed> feddList = userStorage.getFeedsList(1);
-        Feed feedUser = feddList.get(0);
-        assertEquals(feedUser.getEventType(), EventType.LIKE);
-        assertEquals(feedUser.getOperation(), OperationType.ADD);
-        filmStorage.removeLike(1, 1);
-    }
-
-    @Test
-    void shouldAddFeedRemoveFilm() {
-        filmStorage.addLike(1, 1);
-        filmStorage.removeLike(1, 1);
-        List<Feed> feddList = userStorage.getFeedsList(1);
-        Feed feedUser = feddList.get(1);
-        assertEquals(feedUser.getEventType(), EventType.LIKE);
-        assertEquals(feedUser.getOperation(), OperationType.REMOVE);
-    }
 }

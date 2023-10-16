@@ -207,7 +207,7 @@ class FilmDBStorageTest {
         assertEquals(feedUser.getEventType(), EventType.LIKE);
         assertEquals(feedUser.getOperation(), OperationType.REMOVE);
     }
-    
+
     @Test
     void shouldReturnDirectorFilms() {
         Optional<Film> filmOptional = filmStorage.getFilm(1);

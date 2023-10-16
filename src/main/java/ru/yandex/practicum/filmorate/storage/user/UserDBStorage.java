@@ -41,7 +41,8 @@ public class UserDBStorage implements UserStorage {
         values.put("name", user.getName());
         values.put("birthday", user.getBirthday());
 
-        SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("users").usingGeneratedKeyColumns("user_id");
+        SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName("users")
+                .usingGeneratedKeyColumns("user_id");
 
         int userId = simpleJdbcInsert.executeAndReturnKey(values).intValue();
 
@@ -54,7 +55,8 @@ public class UserDBStorage implements UserStorage {
         String sqlForUpdateUser = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE user_id = ?";
         int userId = user.getId();
         if (getUser(userId).isPresent()) {
-            jdbcTemplate.update(sqlForUpdateUser, user.getEmail(), user.getLogin(), user.getName(), user.getBirthday(), userId);
+            jdbcTemplate.update(sqlForUpdateUser, user.getEmail(), user.getLogin(),
+                    user.getName(), user.getBirthday(), userId);
         }
         log.debug("Пользователь с ID = {} успешно обновлен", userId);
         return getUser(userId).orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
@@ -96,7 +98,8 @@ public class UserDBStorage implements UserStorage {
 
     @Override
     public List<User> getFriendsList(Integer userId) {
-        String sqlFriendsList = "SELECT * " + "FROM users u " + "JOIN user_friend uf on u.user_id = uf.friend_id " + "WHERE uf.user_id = ?";
+        String sqlFriendsList = "SELECT * " + "FROM users u " + "JOIN user_friend uf on u.user_id = uf.friend_id " +
+                "WHERE uf.user_id = ?";
         return jdbcTemplate.query(sqlFriendsList, this::makeUser, userId);
     }
 
@@ -190,7 +193,8 @@ public class UserDBStorage implements UserStorage {
     private Set<Integer> getLikedFilmsByUserId(Integer userId, Integer id) {
         Set<Integer> userLikes = new HashSet<>();
         String sql = "SELECT f.FILM_ID FROM (SELECT FILM_ID FROM FILM_LIKES WHERE USER_ID = ?) as f LEFT JOIN\n" +
-                "(SELECT FILM_ID from FILM_LIKES where USER_ID = ?) as u ON f.FILM_ID = u.FILM_ID WHERE u.FILM_ID is null";
+                "(SELECT FILM_ID from FILM_LIKES where USER_ID = ?) as u ON f.FILM_ID = u.FILM_ID " +
+                "WHERE u.FILM_ID is null";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id, userId);
         while (sqlRowSet.next()) {
             userLikes.add(sqlRowSet.getInt("film_id"));
@@ -201,7 +205,8 @@ public class UserDBStorage implements UserStorage {
     private User makeUser(ResultSet rs, int rowNum) throws SQLException {
         int userId = rs.getInt("user_id");
         try {
-            return new User(userId, rs.getString("email"), rs.getString("login"), rs.getString("name"),
+            return new User(userId, rs.getString("email"), rs.getString("login"),
+                    rs.getString("name"),
                     rs.getDate("birthday").toLocalDate());
         } catch (DataAccessException e) {
             throw new EntityNotFoundException(WRONG_USER_ID);

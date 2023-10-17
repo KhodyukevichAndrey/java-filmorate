@@ -34,13 +34,16 @@ public class ReviewService {
         this.userStorage = userStorage;
     }
 
-    public Optional<Review> addReview(Review review) {
+    public Review addReview(Review review) {
         getUser(review.getUserId());
         getFilm(review.getFilmId());
         return reviewStorage.addReview(review);
     }
 
-    public Optional<Review> updateReview(Review review) {
+    public Review updateReview(Review review) {
+        getReview(review.getReviewId());
+        getUser(review.getUserId());
+        getFilm(review.getFilmId());
         return reviewStorage.updateReview(review);
     }
 
@@ -48,9 +51,9 @@ public class ReviewService {
         reviewStorage.deleteReview(reviewId);
     }
 
-    public Optional<Review> getReview(int reviewId) {
-        return Optional.ofNullable(reviewStorage.getReview(reviewId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID)));
+    public Review getReview(int reviewId) {
+        return reviewStorage.getReview(reviewId)
+                .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID));
     }
 
     public List<Review> getAllReviews() {
@@ -61,11 +64,11 @@ public class ReviewService {
         return reviewStorage.getReviewsByFilmId(filmId, count);
     }
 
-    public Optional<Review> likeReview(int reviewId, int userId, boolean likeValue) {
+    public Review likeReview(int reviewId, int userId, boolean likeValue) {
         return reviewStorage.likeReview(reviewId, userId, likeValue);
     }
 
-    public Optional<Review> deleteLikeReview(int reviewId, int userId, boolean likeValue) {
+    public Review deleteLikeReview(int reviewId, int userId, boolean likeValue) {
         return reviewStorage.deleteLikeReview(reviewId, userId, likeValue);
     }
 

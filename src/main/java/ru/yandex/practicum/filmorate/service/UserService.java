@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
@@ -16,11 +17,13 @@ import java.util.List;
 public class UserService {
 
     private final UserStorage userStorage;
+    private final FilmStorage filmStorage;
     private static final String WRONG_USER_ID = "Пользователь с указанным ID не найден";
 
     @Autowired
-    public UserService(UserStorage userStorage) {
+    public UserService(UserStorage userStorage, FilmStorage filmStorage) {
         this.userStorage = userStorage;
+        this.filmStorage = filmStorage;
     }
 
     public User addUser(User user) {
@@ -30,6 +33,7 @@ public class UserService {
 
     public User updateUser(User user) {
         checkUserName(user);
+        getUser(user.getId());
         return userStorage.updateUser(user);
     }
 
@@ -66,7 +70,7 @@ public class UserService {
     }
 
     public List<Film> getRecommendations(int userId) {
-        return userStorage.getRecommendations(userId);
+        return filmStorage.getRecommendation(userStorage.getSimilarLikes(userId));
     }
 
     private void checkUserName(User user) {

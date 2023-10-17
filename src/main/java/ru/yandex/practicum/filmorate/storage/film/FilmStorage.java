@@ -4,6 +4,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface FilmStorage {
 
@@ -28,4 +29,6 @@ public interface FilmStorage {
     List<Film> getDirectorFilms(Integer directorId, String sortBy);
 
     List<Film> getFilmsBySearch(String query, String by);
+
+    List<Film> getRecommendation(Set<Integer> userId);
 }

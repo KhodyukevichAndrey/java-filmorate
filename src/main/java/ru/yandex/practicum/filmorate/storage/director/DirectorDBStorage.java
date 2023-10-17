@@ -5,7 +5,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 
 import java.sql.ResultSet;
@@ -32,7 +31,7 @@ public class DirectorDBStorage implements DirectorStorage {
         try {
             Director director = jdbcTemplate.queryForObject(sqlDirector, (rs, rowNum) -> makeDirector(rs), directorId);
             log.debug("Режиссёр с указанным ID = {} найден", directorId);
-            return Optional.ofNullable(director);
+            return Optional.of(director);
         } catch (DataAccessException e) {
             log.debug(WRONG_DIRECTOR_ID, directorId);
             return Optional.empty();
@@ -57,8 +56,9 @@ public class DirectorDBStorage implements DirectorStorage {
         int directorId = simpleJdbcInsert.executeAndReturnKey(values).intValue();
 
         log.debug("Режиссёр успешно создан с ID = {}", directorId);
-        return getDirector(directorId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_DIRECTOR_ID));
+
+        director.setId(directorId);
+        return director;
     }
 
     @Override
@@ -66,14 +66,10 @@ public class DirectorDBStorage implements DirectorStorage {
         String sqlForUpdateDirector = "UPDATE directors SET name = ? WHERE director_id = ?";
         int directorId = director.getId();
 
-        if (getDirector(directorId).isPresent()) {
-            jdbcTemplate.update(sqlForUpdateDirector,
-                    director.getName(), directorId);
-        }
+        jdbcTemplate.update(sqlForUpdateDirector, director.getName(), directorId);
 
         log.debug("Режиссёр с ID = {} успешно обновлен", directorId);
-        return getDirector(directorId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_DIRECTOR_ID));
+        return director;
     }
 
     @Override

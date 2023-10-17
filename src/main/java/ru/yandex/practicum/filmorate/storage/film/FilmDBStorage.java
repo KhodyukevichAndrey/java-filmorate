@@ -12,10 +12,7 @@ import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.constants.MyConstants;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
-import ru.yandex.practicum.filmorate.model.Director;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -113,7 +110,7 @@ public class FilmDBStorage implements FilmStorage {
             makeFilmsWithDirectors(List.of(film));
             makeFilmsWithGenres(List.of(film));
             log.debug("Фильм с указанным ID = {} найден", id);
-            return Optional.ofNullable(film);
+            return Optional.of(film);
         } catch (DataAccessException e) {
             log.debug("Фильм с указанным ID = {} не найден", id);
             return Optional.empty();
@@ -217,6 +214,7 @@ public class FilmDBStorage implements FilmStorage {
         return sortedCommonFilms;
     }
 
+    @Override
     public void deleteFilmById(int filmId) {
         if (!getFilm(filmId).isPresent()) {
             throw new EntityNotFoundException("Фильм с id: " + filmId + " не найден.");
@@ -225,8 +223,9 @@ public class FilmDBStorage implements FilmStorage {
         jdbcTemplate.update(sql, filmId);
     }
 
-    public List<Film> recommendations(Set<Integer> ids) {
-        String[] idStrings = ids.stream().map(String::valueOf).toArray(String[]::new);
+    @Override
+    public List<Film> getRecommendation(Set<Integer> usersId) {
+        String[] idStrings = usersId.stream().map(String::valueOf).toArray(String[]::new);
 
         String joinedIds = String.join(",", idStrings);
         String sql = "SELECT f.*, m.* FROM FILMS f JOIN MPA m ON f.mpa_id = m.mpa_id where FILM_ID in " +

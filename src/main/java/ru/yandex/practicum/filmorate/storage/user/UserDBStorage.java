@@ -11,9 +11,7 @@ import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.OperationType;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.film.FilmDBStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -25,12 +23,10 @@ import java.util.*;
 public class UserDBStorage implements UserStorage {
 
     private final JdbcTemplate jdbcTemplate;
-    private final FilmDBStorage filmDBStorage;
     private static final String WRONG_USER_ID = "Пользователь с указанным ID не найден";
 
-    public UserDBStorage(JdbcTemplate jdbcTemplate, FilmDBStorage filmDBStorage) {
+    public UserDBStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.filmDBStorage = filmDBStorage;
     }
 
     @Override
@@ -47,19 +43,18 @@ public class UserDBStorage implements UserStorage {
         int userId = simpleJdbcInsert.executeAndReturnKey(values).intValue();
 
         log.debug("Пользователь успешно создан с ID = {}", userId);
-        return getUser(userId).orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
+        user.setId(userId);
+        return user;
     }
 
     @Override
     public User updateUser(User user) {
         String sqlForUpdateUser = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE user_id = ?";
         int userId = user.getId();
-        if (getUser(userId).isPresent()) {
-            jdbcTemplate.update(sqlForUpdateUser, user.getEmail(), user.getLogin(),
-                    user.getName(), user.getBirthday(), userId);
-        }
+        jdbcTemplate.update(sqlForUpdateUser, user.getEmail(), user.getLogin(),
+                user.getName(), user.getBirthday(), userId);
         log.debug("Пользователь с ID = {} успешно обновлен", userId);
-        return getUser(userId).orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
+        return user;
     }
 
     @Override
@@ -73,7 +68,7 @@ public class UserDBStorage implements UserStorage {
         try {
             User user = jdbcTemplate.queryForObject(sqlUser, this::makeUser, userId);
             log.debug("Пользователь с указанным ID = {} найден", userId);
-            return Optional.ofNullable(user);
+            return Optional.of(user);
         } catch (DataAccessException e) {
             log.debug("Пользователь с указанным ID = {} не найден", userId);
             return Optional.empty();
@@ -121,36 +116,11 @@ public class UserDBStorage implements UserStorage {
 
 
     private EventType getEventTypeById(int id) {
-        EventType eventType = null;
-        switch (id) {
-            case 1:
-                eventType = EventType.LIKE;
-                break;
-            case 2:
-                eventType = EventType.REVIEW;
-                break;
-            case 3:
-                eventType = EventType.FRIEND;
-                break;
-        }
-        return eventType;
+        return EventType.values()[id - 1];
     }
 
     private OperationType getOperationTypeById(int id) {
-        OperationType operationType = null;
-        switch (id) {
-            case 1:
-                operationType = OperationType.REMOVE;
-                break;
-            case 2:
-                operationType = OperationType.ADD;
-                break;
-            case 3:
-                operationType = OperationType.UPDATE;
-                break;
-
-        }
-        return operationType;
+        return OperationType.values()[id - 1];
     }
 
     private Feed makeFeed(ResultSet rs) throws SQLException {
@@ -174,20 +144,17 @@ public class UserDBStorage implements UserStorage {
     public List<Feed> getFeedsList(int id) {
         getUser(id);
         String sql = "SELECT * FROM FEED WHERE user_id = ?";
-        List<Feed> feedsList = new ArrayList<>();
-        feedsList = jdbcTemplate.query(sql, (rs, rowNum) -> makeFeed(rs), id);
-        return feedsList;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> makeFeed(rs), id);
     }
 
     @Override
-    public List<Film> getRecommendations(int userId) {
+    public Set<Integer> getSimilarLikes(int userId) {
         for (User u : getAllUsers()) {
             if (u.getId() != userId) {
-                Set<Integer> otherLikes = getLikedFilmsByUserId(userId, u.getId());
-                return filmDBStorage.recommendations(otherLikes);
+                return getLikedFilmsByUserId(userId, u.getId());
             }
         }
-        return Collections.emptyList();
+        return Collections.emptySet();
     }
 
     private Set<Integer> getLikedFilmsByUserId(Integer userId, Integer id) {

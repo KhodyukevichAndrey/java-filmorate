@@ -9,7 +9,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.director.DirectorDBStorage;
+import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
@@ -25,7 +25,7 @@ public class FilmService {
     private final UserStorage userStorage;
     private final GenreStorage genreStorage;
     private final MpaStorage mpaStorage;
-    private final DirectorDBStorage directorDBStorage;
+    private final DirectorStorage directorStorage;
     private static final String WRONG_USER_ID = "Пользователь с указанным ID не найден";
     private static final String WRONG_FILM_ID = "Фильм с указанным ID не найден";
     private static final String WRONG_DIRECTOR_ID = "Режиссёр с указанным ID не найден";
@@ -35,12 +35,12 @@ public class FilmService {
                        UserStorage userStorage,
                        GenreStorage genreStorage,
                        MpaStorage mpaStorage,
-                       DirectorDBStorage directorDBStorage) {
+                       DirectorStorage directorStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
         this.genreStorage = genreStorage;
         this.mpaStorage = mpaStorage;
-        this.directorDBStorage = directorDBStorage;
+        this.directorStorage = directorStorage;
     }
 
     public Film addFilm(Film film) {
@@ -126,7 +126,7 @@ public class FilmService {
     }
 
     private Director getDirector(int directorId) {
-        return directorDBStorage.getDirector(directorId)
+        return directorStorage.getDirector(directorId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_DIRECTOR_ID));
     }
 }

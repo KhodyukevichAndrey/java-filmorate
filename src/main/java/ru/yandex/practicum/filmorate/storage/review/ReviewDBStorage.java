@@ -28,43 +28,41 @@ public class ReviewDBStorage implements ReviewStorage {
     }
 
     @Override
-    public Optional<Review> addReview(Review review) {
+    public Review addReview(Review review) {
         Map<String, Object> values = new HashMap<>();
         values.put("film_id", review.getFilmId());
         values.put("user_id", review.getUserId());
         values.put("review_body", review.getContent());
         values.put("is_positive", review.getIsPositive());
         values.put("useful", 0);
+
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("reviews")
                 .usingGeneratedKeyColumns("review_id");
         int reviewId = simpleJdbcInsert.executeAndReturnKey(values).intValue();
+
         jdbcTemplate.update(MyConstants.SQLFEEDREVIEW, review.getUserId(), reviewId, 3, 2, 2,
                 LocalDateTime.now());
         log.info("Отзыв успешно создан с ID - {}", reviewId);
-        return Optional.ofNullable(getReview(reviewId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID)));
+        review.setReviewId(reviewId);
+        return review;
     }
 
     @Override
-    public Optional<Review> updateReview(Review review) {
+    public Review updateReview(Review review) {
         Review reviewOld = getReview(review.getReviewId()).get();
         int reviewId = review.getReviewId();
         String sqlUpdateReview = "UPDATE reviews " +
                 "SET review_body = ?, is_positive = ? WHERE review_id = ?";
-        Optional<Review> reviewOptional = getReview(reviewId);
-        if (reviewOptional.isPresent()) {
-            jdbcTemplate.update(sqlUpdateReview,
-                    review.getContent(),
-                    review.getIsPositive(),
-                    reviewId);
-        }
+
+        jdbcTemplate.update(sqlUpdateReview, review.getContent(), review.getIsPositive(), reviewId);
         jdbcTemplate.update(MyConstants.SQLFEEDREVIEW, reviewOld.getUserId(), reviewOld.getReviewId(), 3, 2, 3,
                 LocalDateTime.now());
+
         log.info("Отзыв успешно обновлен по указанном ID = {}", reviewId);
 
-        return Optional.ofNullable(getReview(reviewId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID)));
+        return getReview(reviewId)
+                .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID));
     }
 
     @Override
@@ -75,7 +73,7 @@ public class ReviewDBStorage implements ReviewStorage {
         try {
             Review review = jdbcTemplate.queryForObject(sqlReview, this::makeReview, id);
             log.info("Отзыв с указанным ID = {} найден", id);
-            return Optional.ofNullable(review);
+            return Optional.of(review);
         } catch (DataAccessException e) {
             log.info("Отзыв с указанным ID = {} не найден", id);
             return Optional.empty();
@@ -141,59 +139,37 @@ public class ReviewDBStorage implements ReviewStorage {
     }
 
     @Override
-    public Optional<Review> likeReview(int reviewId, int userId, boolean likeValue) {
+    public Review likeReview(int reviewId, int userId, boolean likeValue) {
         jdbcTemplate.update("INSERT INTO review_likes (review_id, user_id,is_like) VALUES(?,?,?)",
                 reviewId,
                 userId,
                 likeValue);
-        String sqlReview = "SELECT * " +
-                "FROM reviews " +
-                "WHERE review_id = ? ";
-        Review review = jdbcTemplate.queryForObject(sqlReview, this::makeReview, reviewId);
-        String sqlUpdateReview = "UPDATE reviews " +
-                "SET useful = ? WHERE review_id = ?";
-        if (likeValue) {
-            jdbcTemplate.update(sqlUpdateReview,
-                    review.getUseful() + 1,
-                    reviewId);
-            log.info("Лайк пользователя c ID = {} к отзыву с ID = {} успешно добавлен", userId, reviewId);
-        } else {
-            jdbcTemplate.update(sqlUpdateReview,
-                    review.getUseful() - 1,
-                    reviewId);
-            log.info("Дизлайк пользователя c ID = {} к отзыву с ID = {} успешно добавлен", userId, reviewId);
-        }
-        return Optional.ofNullable(getReview(reviewId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID)));
+        log.info("Оценка пользователем с ID - {} для отзыва с ID = {} успешно обновлена", userId, reviewId);
+        updateReviewUseful(reviewId, likeValue);
+        return getReview(reviewId)
+                .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID));
     }
 
     @Override
-    public Optional<Review> deleteLikeReview(int reviewId, int userId, boolean likeValue) {
-        String sqlQuery =
-                "DELETE " +
-                        "FROM review_likes " +
-                        "WHERE review_id = ?" +
-                        "AND user_id = ?";
-        jdbcTemplate.update(sqlQuery, reviewId, userId);
-        String sqlReview = "SELECT * " +
-                "FROM reviews " +
-                "WHERE review_id = ? ";
-        Review review = jdbcTemplate.queryForObject(sqlReview, this::makeReview, reviewId);
-        String sqlUpdateReview = "UPDATE reviews " +
-                "SET useful = ? WHERE review_id = ?";
-        if (likeValue == true) {
-            jdbcTemplate.update(sqlUpdateReview,
-                    review.getUseful() - 1,
-                    reviewId);
-            log.info("Лайк пользователя c ID = {} к отзыву с ID = {} успешно удален", userId, reviewId);
-        } else {
-            jdbcTemplate.update(sqlUpdateReview,
-                    review.getUseful() + 1,
-                    reviewId);
-            log.info("Дизлайк пользователя c ID = {} к отзыву с ID = {} успешно удален", userId, reviewId);
-        }
-        return Optional.ofNullable(getReview(reviewId)
-                .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID)));
+    public Review deleteLikeReview(int reviewId, int userId, boolean likeValue) {
+        jdbcTemplate.update("DELETE FROM review_likes WHERE review_id = ? AND user_id = ?",
+                reviewId,
+                userId);
+        log.info("Оценка пользователем с ID - {} для отзыва с ID = {} успешно удалена", userId, reviewId);
+        updateReviewUseful(reviewId, likeValue);
+        return getReview(reviewId)
+                .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID));
     }
 
+    private void updateReviewUseful(int reviewId, boolean likeValue) {
+        String sqlChangeUseful;
+        if (likeValue) {
+            sqlChangeUseful = "UPDATE reviews SET useful = useful + 1 WHERE review_id = ?";
+            jdbcTemplate.update(sqlChangeUseful, reviewId);
+        } else {
+            sqlChangeUseful = "UPDATE reviews SET useful = useful - 1 WHERE review_id = ?";
+            jdbcTemplate.update(sqlChangeUseful, reviewId);
+        }
+        log.info("Полезность отзыва с ID = {} успешно обновлена", reviewId);
+    }
 }

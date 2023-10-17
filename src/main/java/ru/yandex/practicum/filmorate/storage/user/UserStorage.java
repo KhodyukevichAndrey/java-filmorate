@@ -1,11 +1,11 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
 import ru.yandex.practicum.filmorate.model.Feed;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface UserStorage {
 
@@ -29,5 +29,5 @@ public interface UserStorage {
 
     List<Feed> getFeedsList(int id);
 
-    List<Film> getRecommendations(int userId);
+    Set<Integer> getSimilarLikes(int userId);
 }

@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.OperationType;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.feed.FeedDBStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserDBStorage;
 
 import java.time.LocalDate;
@@ -29,6 +30,8 @@ class UserDBStorageTest {
 
     @Autowired
     private final UserDBStorage userStorage;
+    @Autowired
+    private final FeedDBStorage feedDBStorage;
     private final JdbcTemplate jdbcTemplate;
     User user;
     User friend;
@@ -159,7 +162,7 @@ class UserDBStorageTest {
     @Test
     void shouldAddFeedAddFriend() {
         userStorage.addFriend(1, 2);
-        List<Feed> feddList = userStorage.getFeedsList(1);
+        List<Feed> feddList = feedDBStorage.getFeedsList(1);
         Feed feedUser = feddList.get(0);
         assertEquals(feedUser.getEventType(), EventType.FRIEND);
         assertEquals(feedUser.getOperation(), OperationType.ADD);
@@ -169,7 +172,7 @@ class UserDBStorageTest {
     void shouldAddFeedRemoveFriend() {
         userStorage.addFriend(1, 2);
         userStorage.deleteFriend(1, 2);
-        List<Feed> feddList = userStorage.getFeedsList(1);
+        List<Feed> feddList = feedDBStorage.getFeedsList(1);
         Feed feedUser = feddList.get(1);
         assertEquals(feedUser.getEventType(), EventType.FRIEND);
         assertEquals(feedUser.getOperation(), OperationType.REMOVE);

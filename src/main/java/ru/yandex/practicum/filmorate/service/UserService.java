@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.feed.FeedStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -18,12 +19,14 @@ public class UserService {
 
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
+    private final FeedStorage feedStorage;
     private static final String WRONG_USER_ID = "Пользователь с указанным ID не найден";
 
     @Autowired
-    public UserService(UserStorage userStorage, FilmStorage filmStorage) {
+    public UserService(UserStorage userStorage, FilmStorage filmStorage, FeedStorage feedStorage) {
         this.userStorage = userStorage;
         this.filmStorage = filmStorage;
+        this.feedStorage = feedStorage;
     }
 
     public User addUser(User user) {
@@ -88,6 +91,6 @@ public class UserService {
 
     public List<Feed> getFeedsList(int id) {
         getUser(id);
-        return userStorage.getFeedsList(id);
+        return feedStorage.getFeedsList(id);
     }
 }

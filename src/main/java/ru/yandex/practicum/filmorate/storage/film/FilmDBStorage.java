@@ -179,9 +179,9 @@ public class FilmDBStorage implements FilmStorage {
                 "LEFT JOIN film_likes fl ON f.film_id = fl.film_id " +
                 "WHERE fd.director_id = ? " + "GROUP BY f.film_id " + "ORDER BY COUNT (fl.user_id) DESC";
 
-        if (sortBy.equals("year")) {
+        if (SortType.YEAR.toString().equals(sortBy.toUpperCase())) {
             sortedFilms = jdbcTemplate.query(sqlSortByYear, this::makeFilm, directorId);
-        } else if (sortBy.equals("likes")) {
+        } else if (SortType.LIKES.toString().equals(sortBy.toUpperCase())) {
             sortedFilms = jdbcTemplate.query(sqlSortByLikes, this::makeFilm, directorId);
         } else {
             sortedFilms = jdbcTemplate.query(sqlWithoutSort, this::makeFilm, directorId);

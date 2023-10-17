@@ -156,7 +156,7 @@ public class ReviewDBStorage implements ReviewStorage {
                 reviewId,
                 userId);
         log.info("Оценка пользователем с ID - {} для отзыва с ID = {} успешно удалена", userId, reviewId);
-        updateReviewUseful(reviewId, likeValue);
+        updateReviewUseful(reviewId, !likeValue);
         return getReview(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_REVIEW_ID));
     }

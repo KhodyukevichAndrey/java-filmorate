@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.storage.feed.FeedDBStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmDBStorage;
 import ru.yandex.practicum.filmorate.storage.review.ReviewDBStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserDBStorage;
@@ -22,13 +23,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class ReviewDBStorageTest {
+class ReviewDBStorageTest {
     @Autowired
     private final FilmDBStorage filmStorage;
     @Autowired
     private final UserDBStorage userStorage;
     @Autowired
     private final ReviewDBStorage reviewDBStorage;
+    @Autowired
+    private final FeedDBStorage feedDBStorage;
     private final JdbcTemplate jdbcTemplate;
     User user;
     User anotherUser;
@@ -80,7 +83,7 @@ public class ReviewDBStorageTest {
     @Test
     void shouldAddFeedCreateReview() {
         reviewDBStorage.addReview(review);
-        List<Feed> feddList = userStorage.getFeedsList(1);
+        List<Feed> feddList = feedDBStorage.getFeedsList(1);
         Feed feedUser = feddList.get(0);
         assertEquals(feedUser.getEventType(), EventType.REVIEW);
         assertEquals(feedUser.getOperation(), OperationType.ADD);
@@ -90,7 +93,7 @@ public class ReviewDBStorageTest {
     void shouldAddFeedRemoveReview() {
         reviewDBStorage.addReview(review);
         reviewDBStorage.deleteReview(1);
-        List<Feed> feddList = userStorage.getFeedsList(1);
+        List<Feed> feddList = feedDBStorage.getFeedsList(1);
         Feed feedUser = feddList.get(1);
         assertEquals(feedUser.getEventType(), EventType.REVIEW);
         assertEquals(feedUser.getOperation(), OperationType.REMOVE);
@@ -102,7 +105,7 @@ public class ReviewDBStorageTest {
         review.setContent("So Good");
         review.setReviewId(1);
         reviewDBStorage.updateReview(review);
-        List<Feed> feddList = userStorage.getFeedsList(1);
+        List<Feed> feddList = feedDBStorage.getFeedsList(1);
         Feed feedUser = feddList.get(1);
         assertEquals(feedUser.getEventType(), EventType.REVIEW);
         assertEquals(feedUser.getOperation(), OperationType.UPDATE);

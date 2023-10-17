@@ -8,9 +8,6 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.constants.MyConstants;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
-import ru.yandex.practicum.filmorate.model.EventType;
-import ru.yandex.practicum.filmorate.model.Feed;
-import ru.yandex.practicum.filmorate.model.OperationType;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.ResultSet;
@@ -112,39 +109,6 @@ public class UserDBStorage implements UserStorage {
         }
         String sql = "DELETE FROM users WHERE user_id = ?;";
         jdbcTemplate.update(sql, userId);
-    }
-
-
-    private EventType getEventTypeById(int id) {
-        return EventType.values()[id - 1];
-    }
-
-    private OperationType getOperationTypeById(int id) {
-        return OperationType.values()[id - 1];
-    }
-
-    private Feed makeFeed(ResultSet rs) throws SQLException {
-        int userId = rs.getInt("user_id");
-        int eventId = rs.getInt("event_id");
-        int entityId = rs.getInt("entity_id");
-        EventType eventType = getEventTypeById(rs.getInt("event_type"));
-        OperationType operationType = getOperationTypeById(rs.getInt("operation"));
-        Date date = rs.getTimestamp("time_stamp");
-        return Feed.builder()
-                .userId(userId)
-                .eventType(eventType)
-                .operation(operationType)
-                .eventId(eventId)
-                .entityId(entityId)
-                .timestamp(date)
-                .build();
-    }
-
-    @Override
-    public List<Feed> getFeedsList(int id) {
-        getUser(id);
-        String sql = "SELECT * FROM FEED WHERE user_id = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> makeFeed(rs), id);
     }
 
     @Override

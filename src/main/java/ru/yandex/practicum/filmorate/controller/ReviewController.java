@@ -75,28 +75,28 @@ public class ReviewController {
 
     @PutMapping("/{reviewId}/like/{userId}")
     public Review likeReview(@PathVariable("reviewId") @Min(1) int reviewId,
-                                       @PathVariable("userId") @Min(1) int userId) {
+                             @PathVariable("userId") @Min(1) int userId) {
         log.info("Получен запрос PUT /reviews/{id}/like/{userId}");
         return reviewService.likeReview(reviewId, userId, true);
     }
 
     @PutMapping("/{reviewId}/dislike/{userId}")
     public Review dislikeReview(@PathVariable("reviewId") @Min(1) int reviewId,
-                                          @PathVariable("userId") @Min(1) int userId) {
+                                @PathVariable("userId") @Min(1) int userId) {
         log.info("Получен запрос PUT /reviews/{id}/dislike/{userId}");
         return reviewService.likeReview(reviewId, userId, false);
     }
 
     @DeleteMapping("/{reviewId}/like/{userId}")
     public Review deleteLikeReview(@PathVariable("reviewId") @Min(1) int reviewId,
-                                             @PathVariable("userId") @Min(1) int userId) {
+                                   @PathVariable("userId") @Min(1) int userId) {
         log.info("Получен запрос DELETE /reviews/{id}/like/{userId}");
         return reviewService.deleteLikeReview(reviewId, userId, true);
     }
 
     @DeleteMapping("/{reviewId}/dislike/{userId}")
     public Review deleteDislikeReview(@PathVariable("reviewId") @Min(1) int reviewId,
-                                                @PathVariable("userId") @Min(1) int userId) {
+                                      @PathVariable("userId") @Min(1) int userId) {
         log.info("Получен запрос DELETE /reviews/{id}/dislike/{userId}");
         return reviewService.deleteLikeReview(reviewId, userId, false);
     }

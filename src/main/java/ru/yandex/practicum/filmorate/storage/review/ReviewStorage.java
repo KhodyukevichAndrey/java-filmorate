@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface ReviewStorage {
     Review addReview(Review review);
 
-    Optional <Review> getReview(Integer id);
+    Optional<Review> getReview(Integer id);
 
     List<Review> getAllReviews();
 

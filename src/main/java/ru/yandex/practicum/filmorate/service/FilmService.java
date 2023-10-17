@@ -97,18 +97,15 @@ public class FilmService {
         return mpaStorage.getAllMpa();
     }
 
-
     public List<Film> getSortedDirectorFilms(int directorId, String sortBy) {
         getDirector(directorId);
         return filmStorage.getDirectorFilms(directorId, sortBy);
     }
 
-
     private User getUser(int userId) {
         return userStorage.getUser(userId)
                 .orElseThrow(() -> new EntityNotFoundException(WRONG_USER_ID));
     }
-
 
     public List<Film> getCommonFilms(int userId, int friendId) {
         getUser(userId);

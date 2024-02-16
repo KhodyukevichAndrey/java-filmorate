@@ -18,4 +18,4 @@ REST-сервис, с использованием SpringBoot, Maven, Lombok, л
 
 ## Структура локальной БД H2:
 
-![DB structure](https://github.com/KhodyukevichAndrey/java-filmorate/blob/main/DBstructure.jpg?raw=true)
+![DB structure](https://github.com/KhodyukevichAndrey/java-filmorate/blob/main/DBstructure.jpg)

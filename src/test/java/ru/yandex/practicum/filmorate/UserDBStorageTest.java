@@ -8,7 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Feed;
+import ru.yandex.practicum.filmorate.model.OperationType;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.feed.FeedDBStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserDBStorage;
 
 import java.time.LocalDate;
@@ -16,7 +20,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
@@ -25,6 +30,8 @@ class UserDBStorageTest {
 
     @Autowired
     private final UserDBStorage userStorage;
+    @Autowired
+    private final FeedDBStorage feedDBStorage;
     private final JdbcTemplate jdbcTemplate;
     User user;
     User friend;
@@ -150,5 +157,24 @@ class UserDBStorageTest {
         assertEquals(1, commonFriendsList.size(), "Размер списка общих друзей должен быть равен 1");
         assertEquals(commonFriendAfterCreate, commonFriendsList.get(0),
                 "Пользователь в списке общих друзей не соответствует");
+    }
+
+    @Test
+    void shouldAddFeedAddFriend() {
+        userStorage.addFriend(1, 2);
+        List<Feed> feddList = feedDBStorage.getFeedsList(1);
+        Feed feedUser = feddList.get(0);
+        assertEquals(feedUser.getEventType(), EventType.FRIEND);
+        assertEquals(feedUser.getOperation(), OperationType.ADD);
+    }
+
+    @Test
+    void shouldAddFeedRemoveFriend() {
+        userStorage.addFriend(1, 2);
+        userStorage.deleteFriend(1, 2);
+        List<Feed> feddList = feedDBStorage.getFeedsList(1);
+        Feed feedUser = feddList.get(1);
+        assertEquals(feedUser.getEventType(), EventType.FRIEND);
+        assertEquals(feedUser.getOperation(), OperationType.REMOVE);
     }
 }

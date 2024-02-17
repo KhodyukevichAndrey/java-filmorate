@@ -8,6 +8,8 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 import java.util.List;
 
@@ -43,26 +45,54 @@ public class FilmController {
     }
 
     @GetMapping("/{id}")
-    public Film getFilm(@PathVariable Integer id) {
+    public Film getFilm(@PathVariable int id) {
         log.debug("Получен запрос GET /films/{id}");
         return filmService.getFilm(id);
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public void addLike(@PathVariable Integer id, @PathVariable Integer userId) {
+    public void addLike(@PathVariable int id, @PathVariable Integer userId) {
         log.debug("Получен запрос PUT /films/{id}/like/{userId}");
         filmService.addLike(id, userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public void removeLike(@PathVariable Integer id, @PathVariable Integer userId) {
+    public void removeLike(@PathVariable int id, @PathVariable Integer userId) {
         log.debug("Получен запрос DELETE /films/{id}/like/{userId}");
         filmService.removeLike(id, userId);
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") @Positive Integer count) {
-        log.debug("Получен запрос GET /films/popular?count={count}");
-        return filmService.getPopularFilms(count);
+    public List<Film> getPopularFilms(@Valid @Positive @RequestParam(defaultValue = "10") Integer count,
+                                      @RequestParam(required = false) Integer genreId,
+                                      @Valid @Min(1895) @RequestParam(required = false) Integer year) {
+        log.debug("Получен запрос GET /films/popular?count={count}&genreId{genreId}&year={year}");
+        return filmService.getPopularFilms(count, genreId, year);
+    }
+
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(@RequestParam int userId, @RequestParam int friendId) {
+        return filmService.getCommonFilms(userId, friendId);
+    }
+
+    @DeleteMapping("/{filmId}")
+    public String deleteFilmById(@PathVariable int filmId) {
+        log.info("Получен запрос DELETE/{filmId}");
+        filmService.deleteFilmById(filmId);
+        return "Фильм с id: " + filmId + " удалён.";
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<Film> getSortedFilmsByDirector(@Valid @Positive @PathVariable Integer directorId,
+                                               @RequestParam(defaultValue = "noSort") String sortBy) {
+        log.debug("Получен запрос GET /films/director/{directorId}?sortBy{likes|year}");
+        return filmService.getSortedDirectorFilms(directorId, sortBy);
+    }
+
+    @GetMapping("/search")
+    public List<Film> getFilmsBySearch(@Valid @NotBlank @RequestParam("query") String query,
+                                       @RequestParam("by") String by) {
+        log.debug("Получен запрос GET /films/search");
+        return filmService.getFilmsBySearch(query, by);
     }
 }

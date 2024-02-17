@@ -4,6 +4,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface UserStorage {
 
@@ -13,7 +14,7 @@ public interface UserStorage {
 
     List<User> getAllUsers();
 
-    Optional<User> getUser(Integer userId);
+    Optional<User> getUser(int userId);
 
     void addFriend(Integer userId, Integer friendId);
 
@@ -22,4 +23,8 @@ public interface UserStorage {
     List<User> getFriendsList(Integer userId);
 
     List<User> getCommonFriends(Integer userId, Integer friendId);
+
+    void deleteUserById(int userId);
+
+    Set<Integer> getSimilarLikes(int userId);
 }
